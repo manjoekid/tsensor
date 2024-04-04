@@ -1,0 +1,11 @@
+[Unit]
+Description=Gunicorn instance to serve Flask Tsensor app
+After=network.target
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/home/tsensor/tsensor_web/
+Environment="PATH=/home/tsensor/tsensor_web/virtualenv_web/bin"
+ExecStart=/home/tsensor/tsensor_web/virtualenv_web/bin/gunicorn --bind 0.0.0.0:5000 wsgi:app
+[Install]
+WantedBy=multi-user.target
