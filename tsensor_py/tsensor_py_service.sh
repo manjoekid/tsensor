@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Replace 'path_to_your_python_app' with the actual path to your Python application script.
-APP_PATH="/home/tsensor/tsensor_py/test_serial.py"
+APP_PATH="/home/tsensor/tsensor/tsensor_py/test_serial.py"
 PID_FILE="/var/run/tsensor/tsensor_py_app.pid"
 
 
@@ -10,7 +10,7 @@ start() {
     if [ -f $PID_FILE ]; then
         echo "The service is already running."
     else
-        nohup /home/tsensor/tsensor_py/virtualenv_py/bin/python3 $APP_PATH &> /dev/null &
+        nohup /home/tsensor/tsensor/tsensor_py/virtualenv_py/bin/python3 $APP_PATH &> /dev/null &
         echo $! > $PID_FILE
         echo "Service started."
     fi

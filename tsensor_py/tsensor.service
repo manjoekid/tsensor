@@ -6,10 +6,10 @@ After=network.target
 Type=simple
 RemainAfterExit=yes
 User=root
-WorkingDirectory=/home/tsensor/tsensor_py
-ExecStart=/home/tsensor/tsensor_py/tsensor_py_service.sh start
-ExecStop=/home/tsensor/tsensor_py/tsensor_py_service.sh stop
-ExecReload=/home/tsensor/tsensor_py/tsensor_py_service.sh restart
+WorkingDirectory=/home/tsensor/tsensor/tsensor_py
+ExecStart=/home/tsensor/tsensor/tsensor_py/tsensor_py_service.sh start
+ExecStop=/home/tsensor/tsensor/tsensor_py/tsensor_py_service.sh stop
+ExecReload=/home/tsensor/tsensor/tsensor_py/tsensor_py_service.sh restart
 Restart=always
 
 [Install]

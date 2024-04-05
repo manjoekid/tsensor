@@ -101,7 +101,7 @@ sudo ifup enp2s0 || echo "Falhou enp2s0, verifique conexões."
 
 
 echo "copiando novo arquivo de interfaces"
-sudo cp ./interfaces-updated  /etc/network/interfaces || { echo "Falhou a cópia do arquivo de interfaces. Exiting."; exit 1; }
+sudo cp /home/tsensor/tsensor/interfaces-updated  /etc/network/interfaces || { echo "Falhou a cópia do arquivo de interfaces. Exiting."; exit 1; }
 
 
 echo "reiniciando a rede"
