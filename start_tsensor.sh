@@ -21,11 +21,11 @@ download_files() {
 # Function to run another script
 run_script() {
     # Change directory to the downloaded files folder
-    cd  "$destination_folder/tsensor" || { echo "Error: Folder not found."; exit 1; }
+    cd  /home/tsensor/tsensor || { echo "Error: Folder not found."; exit 1; }
 
     # Run another script
     echo "Running installation script..."
-    bash setup_tsensor.sh
+    bash setup_tsensor.sh || { echo "Error: setup finished with error."; exit 1; }
     echo "Script executed successfully."
 }
 
