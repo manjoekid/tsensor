@@ -59,8 +59,8 @@ echo "Installing required Python packages..."
 pip3 install wheel gunicorn flask numpy shared-memory-dict  || { echo "Failed to install Python packages. Exiting."; deactivate; exit 1; }
 echo "Python packages installed successfully."
 
-echo "Testing gunicorn..."
-gunicorn --bind 0.0.0.0:5000 wsgi:app
+#echo "Testing gunicorn..."
+#gunicorn --bind 0.0.0.0:5000 wsgi:app
 
 echo "Deactivating virtual environment..."
 deactivate

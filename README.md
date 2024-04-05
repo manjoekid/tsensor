@@ -1,12 +1,6 @@
-Windows
-
-pip install pyserial
-pip install numpy
-pip install csv
-pip install shared-memory-dict
-
-
-pip install flask
+curl -O https://raw.githubusercontent.com/manjoekid/tsensor/main/start_tsensor.sh
+chmod +x start_tsensor.sh
+./start_tsensor.sh
 
 
 Linux
