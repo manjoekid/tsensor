@@ -21,7 +21,7 @@ download_files() {
 # Function to run another script
 run_script() {
     # Change directory to the downloaded files folder
-    cd  "$destination_folder" || { echo "Error: Folder not found."; exit 1; }
+    cd  "$destination_folder/tsensor" || { echo "Error: Folder not found."; exit 1; }
 
     # Run another script
     echo "Running installation script..."
