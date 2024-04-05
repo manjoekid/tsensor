@@ -1,0 +1,14 @@
+source /etc/network/interfaces.d/*
+
+auto lo br0
+iface lo inet loopback
+
+iface enp1s0 inet manual
+iface enp2s0 inet manual
+
+iface br0 inet static
+	bridge_ports enp1s0 enp2s0
+	address 192.168.15.126
+	gateway 192.168.15.1
+	netmask 255.255.255.0
+	dns-nameservers 8.8.8.8 8.8.4.4
