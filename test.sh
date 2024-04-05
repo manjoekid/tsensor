@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd tsensor_py || { echo "Failed to change directory. Exiting."; exit 1; }
+cd /home/tsensor/tsensor/tsensor_py || { echo "Failed to change directory. Exiting."; exit 1; }
 
 echo "Changing permissions for the tsensor service..."
 chmod +x tsensor_py_service.sh || echo "Failed to change permissions."
