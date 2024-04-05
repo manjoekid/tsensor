@@ -10,6 +10,7 @@ sudo chmod -R 775 /home/tsensor/tsensor/tsensor_py/ || echo "Failed to change pe
 
 echo "Starting tsensor service..."
 sudo cp tsensor.service /etc/systemd/system/ || echo "Failed to start tsensor service."
+sudo systemctl stop tsensor.service || echo "Failed to start tsensor service."
 sudo systemctl enable tsensor.service || echo "Failed to start tsensor service."
 sudo systemctl start tsensor.service || echo "Failed to start tsensor service."
 
@@ -25,6 +26,7 @@ sudo chmod -R 775 /home/tsensor/tsensor/tsensor_web/   || { echo "Failed to star
 
 sudo systemctl daemon-reload   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
 
+sudo systemctl stop flask
 sudo systemctl start flask   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
 sudo systemctl enable flask   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
 
