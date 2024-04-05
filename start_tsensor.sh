@@ -30,5 +30,7 @@ run_script() {
 }
 
 # Call the functions
+echo "Installing Git..."
+sudo apt install git || { echo "Error: cannot install git."; exit 1; }
 download_files
 run_script
