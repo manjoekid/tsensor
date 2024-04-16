@@ -167,6 +167,7 @@ def check_Alarme():
 
     alarm_on = data_received_mod != 0
     tsensor_pipe["estado"] = alarm_on
+    print(f"[{timestamp}] Alarme is [{alarm_on}]")
     return alarm_on
 
 
