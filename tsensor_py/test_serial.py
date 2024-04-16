@@ -144,6 +144,7 @@ def turn_on_alarm():
         return
 
 def check_GA():
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
     # Reading data to the TCP port
     data_received_mod = tcp_modbus.read_holding_registers(70, 1)
 
@@ -156,6 +157,7 @@ def check_GA():
 def check_Alarme():
     global alarm_on
     # Reading data to the TCP port
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
     data_received_mod = tcp_modbus.read_holding_registers(500, 1)
 
     print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
