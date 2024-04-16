@@ -153,6 +153,20 @@ def check_GA():
     print(f"Data received from Modbus: {data_received_mod}")
     return data_received_mod != 0
 
+def check_Alarme():
+    global alarm_on
+    # Reading data to the TCP port
+    data_received_mod = tcp_modbus.read_holding_registers(500, 1)
+
+    print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
+    # Reading data from the RS485 port
+        
+    print(f"Data received from Modbus: {data_received_mod}")
+
+    alarm_on = data_received_mod != 0
+    tsensor_pipe["estado"] = alarm_on
+    return alarm_on
+
 
 def reiniciar_haste():
     
@@ -208,7 +222,8 @@ try:
     alarm_down_array = np.zeros(32, dtype='int')
     #print_erro("Sistema inicializado")
 
-    turn_off_alarm()
+    #turn_off_alarm()
+    check_Alarme()
 
     inicializa_haste()
 
