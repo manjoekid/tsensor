@@ -167,7 +167,7 @@ def check_Alarme():
         
     print(f"Data received from Modbus: {data_received_mod}")
 
-    if data_received_mod == 0 :
+    if data_received_mod[0] == 0 :
         alarm_on = False
         tsensor_pipe["estado"] = alarm_on
         print(f"[{timestamp}] Alarme is {alarm_on}")
@@ -181,7 +181,7 @@ def check_Alarme():
         
     print(f"Data received from Modbus: {data_received_mod}")
 
-    if data_received_mod == 0 :
+    if data_received_mod == [0] :
         alarm_on = False
         tsensor_pipe["estado"] = alarm_on
         print(f"[{timestamp}] Alarme is {alarm_on}")
