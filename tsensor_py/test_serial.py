@@ -46,7 +46,7 @@ csv_header_temp = ['Timestamp', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4'
                            , 'Sensor 29', 'Sensor 30', 'Sensor 31', 'Sensor 32'
                            ,'Estado Alarme','Estado GA']
 
-alarm_on = False
+alarm_on = True
 modo = 'auto'
 
 average_temp = 0.0   #temperatura média 

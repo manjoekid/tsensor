@@ -15,6 +15,7 @@ users = {
 }
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
+tsensor_pipe["estado"] = True
 
 # Routes
 @app.route('/')
