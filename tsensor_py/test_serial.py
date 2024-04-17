@@ -167,12 +167,12 @@ def check_Alarme():
         
     print(f"Data received from Modbus: {data_received_mod}")
 
-    alarm_on = data_received_mod == 0
+    if data_received_mod == 0 :
+        alarm_on = False
+        tsensor_pipe["estado"] = alarm_on
+        print(f"[{timestamp}] Alarme is {alarm_on}")
 
-    tsensor_pipe["estado"] = alarm_on
-    print(f"[{timestamp}] Alarme is [{alarm_on}]")
-
-    data_received_mod = tcp_modbus.write_single_register(500, 0)  #Desiga alarme
+    data_received_mod = tcp_modbus.write_single_register(500, 0)  #Desliga alarme
     print(f"[{timestamp}] Turning alarm ff - Data written: (500, 1)")
     data_received_mod = tcp_modbus.read_holding_registers(500, 1)
 
@@ -181,9 +181,10 @@ def check_Alarme():
         
     print(f"Data received from Modbus: {data_received_mod}")
 
-    alarm_on = data_received_mod == 0
-    tsensor_pipe["estado"] = alarm_on
-    print(f"[{timestamp}] Alarme is [{alarm_on}]")
+    if data_received_mod == 0 :
+        alarm_on = False
+        tsensor_pipe["estado"] = alarm_on
+        print(f"[{timestamp}] Alarme is {alarm_on}")
 
 
     return alarm_on
