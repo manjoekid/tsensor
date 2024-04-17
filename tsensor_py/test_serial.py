@@ -427,6 +427,7 @@ try:
         tsensor_pipe["temperature"] = temp_array.tolist()
         tsensor_pipe["temperature_max"] = temp_max_array.tolist()
         tsensor_pipe["temperature_min"] = temp_min_array.tolist()
+        tsensor_pipe["estado"] = alarm_on
         read_count = np.count_nonzero(temp_array)
         if read_count != 0 :
             average_temp = np.sum(temp_array)/read_count
