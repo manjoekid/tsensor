@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                             atualizaDadosGrafico(data.temperaturas,data.media);
                             atualizarModo(data.modo);
-                            atualizarEstado(data.estado);
+                            atualizarEstado(data.estado,data.estado_ga);
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
