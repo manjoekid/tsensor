@@ -158,6 +158,22 @@ def check_Alarme():
     global alarm_on
     # Reading data to the TCP port
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
+    data_received_mod = tcp_modbus.write_single_register(500, 1)  #Liga alarme
+    print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
+    data_received_mod = tcp_modbus.read_holding_registers(500, 1)
+
+    print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
+    # Reading data from the RS485 port
+        
+    print(f"Data received from Modbus: {data_received_mod}")
+
+    alarm_on = data_received_mod == 0
+
+    tsensor_pipe["estado"] = alarm_on
+    print(f"[{timestamp}] Alarme is [{alarm_on}]")
+
+    data_received_mod = tcp_modbus.write_single_register(500, 0)  #Desiga alarme
+    print(f"[{timestamp}] Turning alarm ff - Data written: (500, 1)")
     data_received_mod = tcp_modbus.read_holding_registers(500, 1)
 
     print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
@@ -168,6 +184,8 @@ def check_Alarme():
     alarm_on = data_received_mod == 0
     tsensor_pipe["estado"] = alarm_on
     print(f"[{timestamp}] Alarme is [{alarm_on}]")
+
+
     return alarm_on
 
 
