@@ -102,7 +102,7 @@ def turn_off_alarm():
 
 def turn_on_alarm():
     global alarm_on
-    if alarm_on :
+    if check_Alarme() :
         return
 
     if tsensor_pipe["modo"] == 'auto' :
@@ -158,8 +158,6 @@ def check_Alarme():
     global alarm_on
     # Reading data to the TCP port
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
-    data_received_mod = tcp_modbus.write_single_register(500, 1)  #Liga alarme
-    print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
     data_received_mod = tcp_modbus.read_holding_registers(500, 1)
 
     print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
@@ -168,24 +166,12 @@ def check_Alarme():
     print(f"Data received from Modbus: {data_received_mod}")
 
     if data_received_mod == [1] :
+        alarm_on = True
+    else:
         alarm_on = False
-        tsensor_pipe["estado"] = alarm_on
-        print(f"[{timestamp}] Alarme is {alarm_on}")
 
-    data_received_mod = tcp_modbus.write_single_register(500, 0)  #Desliga alarme
-    print(f"[{timestamp}] Turning alarm ff - Data written: (500, 1)")
-    data_received_mod = tcp_modbus.read_holding_registers(500, 1)
-
-    print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
-    # Reading data from the RS485 port
-        
-    print(f"Data received from Modbus: {data_received_mod}")
-
-    if data_received_mod == [0] :
-        alarm_on = False
-        tsensor_pipe["estado"] = alarm_on
-        print(f"[{timestamp}] Alarme is {alarm_on}")
-
+    tsensor_pipe["estado"] = alarm_on
+    print(f"[{timestamp}] Alarme is {alarm_on}")
 
     return alarm_on
 
