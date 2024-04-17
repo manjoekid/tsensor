@@ -57,7 +57,7 @@ temp_max_array = np.zeros(32, dtype='float32')
 temp_min_array = np.zeros(32, dtype='float32')
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
-tsensor_pipe["estado"] = False
+tsensor_pipe["estado"] = True
 tsensor_pipe["limite_superior"] = CONST_UPPER_LIMIT
 tsensor_pipe["limite_inferior"] = CONST_LOWER_LIMIT
 tsensor_pipe["modo"] = modo
@@ -152,7 +152,7 @@ def check_GA():
     # Reading data from the RS485 port
         
     print(f"Data received from Modbus: {data_received_mod}")
-    return data_received_mod != 0
+    return data_received_mod != [0]
 
 def check_Alarme():
     global alarm_on
@@ -167,10 +167,11 @@ def check_Alarme():
 
     if data_received_mod == [1] :
         alarm_on = True
+        tsensor_pipe["estado"] = True
     else:
         alarm_on = False
+        tsensor_pipe["estado"] = False
 
-    tsensor_pipe["estado"] = alarm_on
     print(f"[{timestamp}] Alarme is {alarm_on}")
 
     return alarm_on
