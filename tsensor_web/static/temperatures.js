@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
             botao.classList.add("btn-success");
             botao.classList.remove("btn-danger");
         }
-        var botao_GA = document.getElementById("botao_estado_GA");
+        var botao_GA = document.getElementById("botao_estado_ga");
         if (estado_ga) {
             botao_GA.innerText  = "Ligado";
             botao_GA.classList.add("btn-danger");
