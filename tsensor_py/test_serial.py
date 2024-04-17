@@ -58,6 +58,7 @@ temp_min_array = np.zeros(32, dtype='float32')
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
 tsensor_pipe["estado"] = True
+tsensor_pipe["estado_ga"] = False
 tsensor_pipe["limite_superior"] = CONST_UPPER_LIMIT
 tsensor_pipe["limite_inferior"] = CONST_LOWER_LIMIT
 tsensor_pipe["modo"] = modo
@@ -154,9 +155,11 @@ def check_GA():
     print(f"Data received from Modbus: {data_received_mod}")
     if data_received_mod == [1] :
         print(f"[{timestamp}] GA is ON")
+        tsensor_pipe["estado_ga"] = True
         return True
     else:
         print(f"[{timestamp}] GA is OFF")
+        tsensor_pipe["estado_ga"] = False
         return False        
 
 

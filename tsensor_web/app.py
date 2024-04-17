@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from werkzeug.security import generate_password_hash, check_password_hash
 from shared_memory_dict import SharedMemoryDict
 import os
+import datetime
+import csv
 
 #import test_serial
 
@@ -15,7 +17,7 @@ users = {
 }
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
-tsensor_pipe["estado"] = True
+
 
 # Routes
 @app.route('/')
@@ -54,6 +56,7 @@ def dados_temperatura():
     temperature_min = tsensor_pipe["temperature_min"]
     modo_atual = tsensor_pipe["modo"]
     estado_atual = tsensor_pipe["estado"]
+    estado_ga = tsensor_pipe["estado_ga"]
     temperature_media = tsensor_pipe["media"]
 
     intermed = jsonify({'temperaturas':{'max': temperature_max,
@@ -61,6 +64,7 @@ def dados_temperatura():
                                         'min': temperature_min},
                         'modo': modo_atual,
                         'estado':estado_atual,
+                        'estado_ga':estado_ga,
                         'media':temperature_media})
 
     return intermed
@@ -84,11 +88,72 @@ def search_files():
     
     return jsonify(filtered_files)
 
+
+@app.route('/searchFiles2', methods=['POST'])
+def search_files2():
+    start = request.json.get('startTime')
+    stop = request.json.get('stopTime')
+    directory_path = '../tsensor_py/output/'  # Update with the path to your directory
+    output_file = '../tsensor_py/output/download.csv'
+    files = os.listdir(directory_path)
+    
+    # Filter files based on criteria (e.g., creation time)
+    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria2(file,start,stop)]
+    
+    append_csv_files(filtered_files,output_file)
+
+    return jsonify('download.csv')
+
+def meets_criteria2(fileName,start,stop):
+    # Implement your filtering criteria here (e.g., creation time)
+    # For example, you can compare the creation time of the file with your start and stop times
+    # Here's a placeholder example that always returns True
+
+    filePreName = fileName[:12]
+
+    if (filePreName == "output_temp_") :
+        #fileTime = fileName.substring(12,16) + "-" + fileName.substring(16,18) + "-" + fileName.substring(18,20) + "T" + fileName.substring(21,23) + ":" + fileName.substring(23,25) 
+        file_time = datetime.datetime.strptime(fileName[12:25], "%Y%m%d_%H%M%S")
+        start_time = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M")
+        stop_time = datetime.datetime.strptime(stop, "%Y-%m-%dT%H:%M")
+        
+        if start_time <= file_time <= stop_time:
+            return True
+        else:
+            return False
+        
+
 def meets_criteria(file_path):
     # Implement your filtering criteria here (e.g., creation time)
     # For example, you can compare the creation time of the file with your start and stop times
     # Here's a placeholder example that always returns True
     return True
+
+def append_csv_files(input_files, output_file):
+    # Open output file in write mode to clear existing content
+    with open(output_file, 'w', newline='') as outfile:
+        pass  # This line clears the content of the file
+
+    # Flag to skip header for all but the first file
+    skip_header = False
+
+    # Open output file in append mode
+    with open(output_file, 'a', newline='') as outfile:
+        writer = csv.writer(outfile)
+
+        # Iterate over input files
+        for input_file in input_files:
+            # Open input file
+            with open(input_file, 'r', newline='') as infile:
+                reader = csv.reader(infile)
+                # Skip header if not the first file
+                if skip_header:
+                    next(reader)
+                # Append rows to output file
+                for row in reader:
+                    writer.writerow(row)
+            # After the first file, set flag to skip header for subsequent files
+            skip_header = True
 
 @app.route('/downloadFile/<filename>')
 def download_file(filename):

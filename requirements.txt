@@ -1,0 +1,6 @@
+wheel
+gunicorn 
+flask
+shared-memory-dict
+numpy
+datetime

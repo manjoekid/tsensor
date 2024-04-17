@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 atualizarGrafico(data.temperaturas,data.media);
                 atualizarModo(data.modo);
-                atualizarEstado(data.estado);
+                atualizarEstado(data.estado,data.estado_ga);
             })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function atualizarEstado(estado) {
+    function atualizarEstado(estado,estado_ga) {
         var botao = document.getElementById("botao_estado_alarme");
         if (estado) {
             botao.innerText  = "Ligado";
@@ -181,6 +181,16 @@ document.addEventListener('DOMContentLoaded', function () {
             botao.innerText  = "Desligado";
             botao.classList.add("btn-success");
             botao.classList.remove("btn-danger");
+        }
+        var botao_GA = document.getElementById("botao_estado_GA");
+        if (estado_ga) {
+            botao_GA.innerText  = "Ligado";
+            botao_GA.classList.add("btn-danger");
+            botao_GA.classList.remove("btn-success");
+        }else{
+            botao_GA.innerText  = "Desligado";
+            botao_GA.classList.add("btn-success");
+            botao_GA.classList.remove("btn-danger");
         }
     }
 
@@ -339,7 +349,30 @@ document.addEventListener('DOMContentLoaded', function () {
           })
           .catch(error => console.error('Error searching files:', error));
       }
-      
+
+      function searchAndDownload2() {
+        var startTime = document.getElementById("start-time").value;
+        var stopTime = document.getElementById("stop-time").value;
+    
+        // Make an AJAX request using fetch to the Flask server to search for files
+        fetch('/searchFiles2', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ startTime: startTime, stopTime: stopTime })
+        })
+        .then(response => response.json())
+        .then(file => {
+            var downloadUrl = "/downloadFile/" + file;
+    
+            // Download filtered files
+            //downloadUrls.forEach(function(url) {
+                downloadFile(downloadUrl);
+            //});
+        })
+        .catch(error => console.error('Error searching files:', error));
+    }
 
       function downloadFile(url) {
         // Create a temporary anchor element to initiate download
@@ -352,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     
       
-      document.getElementById("search-btn").addEventListener("click", searchAndDownload);
+      document.getElementById("search-btn").addEventListener("click", searchAndDownload2);
 
     // Chamar a função para obter dados de temperatura a cada 1 segundo
     setInterval(obterNovosDadosTemperatura, 1000);
