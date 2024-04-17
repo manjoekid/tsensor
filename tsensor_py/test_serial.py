@@ -102,8 +102,8 @@ def turn_off_alarm():
 
 def turn_on_alarm():
     global alarm_on
-    if check_Alarme() :
-        return
+    #if check_Alarme() :
+    #    return
 
     if tsensor_pipe["modo"] == 'auto' :
         if check_GA():
@@ -152,7 +152,13 @@ def check_GA():
     # Reading data from the RS485 port
         
     print(f"Data received from Modbus: {data_received_mod}")
-    return data_received_mod != [0]
+    if data_received_mod == [1] :
+        print(f"[{timestamp}] GA is ON")
+        return True
+    else:
+        print(f"[{timestamp}] GA is OFF")
+        return False        
+
 
 def check_Alarme():
     global alarm_on
