@@ -124,8 +124,8 @@ def turn_on_alarm():
         else:
             print("Erro - Alarme não foi acionado - GA Desligado")
             #print_erro("Erro - Alarme não foi acionado - GA Desligado")
-            alarm_on = False
-            tsensor_pipe["estado"] = False
+            #alarm_on = False
+            #tsensor_pipe["estado"] = False
             return
     elif tsensor_pipe["modo"] == 'ligado' :
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
@@ -232,7 +232,7 @@ def inicializa_haste():
 
 
 try:
-
+    
     alarm_up_array = np.zeros(32, dtype='int')
     alarm_down_array = np.zeros(32, dtype='int')
     #print_erro("Sistema inicializado")
@@ -413,7 +413,7 @@ try:
                                         , temp_array[20], temp_array[21], temp_array[22], temp_array[23]
                                         , temp_array[24], temp_array[25], temp_array[26], temp_array[27]
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
-                                        , alarm_on, check_GA() ])
+                                        , check_Alarme(), check_GA() ])
 
         for i in range(len(temp_array)):
             temp_max_array[i] = max(temp_max_array[i],temp_array[i])
