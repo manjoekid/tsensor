@@ -274,7 +274,8 @@ try:
 
 
         ### zera o array de temperaturas
-        temp_array = np.zeros(32, dtype='float32')
+        temp_array = np.zeros(32, dtype='float32')      ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA CSV
+        temp_shm = np.zeros(32, dtype='float32')        ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA PÁGINA DO USUÁRIO - sem valores zerados
 
 
         ### inicia a contagem de 16 controladores
@@ -315,7 +316,7 @@ try:
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
                 temp_array[i*2] = int(data_received[4:8],16)/100
-
+                temp_shm[i*2] = int(data_received[4:8],16)/100
                 ### verifica se ultrapassou limite superior
                 if temp_array[i*2] > upper_limit :
                     alarm_up_array[i*2] += 1
@@ -350,7 +351,7 @@ try:
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
-
+                temp_shm[(i*2)+1] = int(data_received[8:12],16)/100
                 ### verifica se ultrapassou limite superior
                 if temp_array[(i*2)+1] > upper_limit :
                     alarm_up_array[(i*2)+1] += 1
@@ -379,7 +380,10 @@ try:
 
                 else :
                     alarm_down_array[(i*2)+1] = 0 
-
+            else:
+                ################### ERRO DE LEITURA ######################
+                temp_shm[i*2] = average_temp
+                temp_shm[(i*2)+1] = average_temp
 
             delay_read_finish = round((time.time() * 1000 ) - delay_read_start)
             print(f"Read processing time: {delay_read_finish}ms")
@@ -405,7 +409,7 @@ try:
             else :
                 turn_on_alarm()
                 pass
-
+        
         with open(csv_file_path_temp, mode='a', newline='') as csv_file_temp:
             csv_writer_temp = csv.writer(csv_file_temp)
             csv_writer_temp.writerow([timestamp, temp_array[0], temp_array[1], temp_array[2], temp_array[3]
@@ -427,10 +431,12 @@ try:
                     temp_min_array[i] = min(temp_min_array[i],temp_array[i])
 
         
-        tsensor_pipe["temperature"] = temp_array.tolist()
+        tsensor_pipe["temperature"] = temp_shm.tolist()
         tsensor_pipe["temperature_max"] = temp_max_array.tolist()
         tsensor_pipe["temperature_min"] = temp_min_array.tolist()
         tsensor_pipe["estado"] = alarm_on
+
+
         read_count = np.count_nonzero(temp_array)
         if read_count != 0 :
             average_temp = np.sum(temp_array)/read_count
