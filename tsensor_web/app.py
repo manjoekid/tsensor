@@ -51,7 +51,7 @@ def logout():
 def dados_temperatura():
     # Dados de exemplo - 32 temperaturas
     #temperatures = test_serial.read_real_time_temperature()
-    temperature = tsensor_pipe["temperature"]
+    temperature =  tsensor_pipe["temperature"]
     temperature_max = tsensor_pipe["temperature_max"]
     temperature_min = tsensor_pipe["temperature_min"]
     modo_atual = tsensor_pipe["modo"]
@@ -78,19 +78,8 @@ def alterar_modo():
     else:
         return jsonify({'error': 'Modo inválido'}), 400
 
-@app.route('/searchFiles')
+@app.route('/searchFiles', methods=['POST'])
 def search_files():
-    directory_path = '../tsensor_py/output/'  # Update with the path to your directory
-    files = os.listdir(directory_path)
-    
-    # Filter files based on criteria (e.g., creation time)
-    filtered_files = [file for file in files if meets_criteria(os.path.join(directory_path, file))]
-    
-    return jsonify(filtered_files)
-
-
-@app.route('/searchFiles2', methods=['POST'])
-def search_files2():
     start = request.json.get('startTime')
     stop = request.json.get('stopTime')
     directory_path = '../tsensor_py/output/'  # Update with the path to your directory
@@ -98,17 +87,14 @@ def search_files2():
     files = os.listdir(directory_path)
     
     # Filter files based on criteria (e.g., creation time)
-    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria2(file,start,stop)]
+    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria(file,start,stop)]
     
     filtered_files = sorted(filtered_files)
     append_csv_files(filtered_files,output_file)
 
     return jsonify('download.csv')
 
-def meets_criteria2(fileName,start,stop):
-    # Implement your filtering criteria here (e.g., creation time)
-    # For example, you can compare the creation time of the file with your start and stop times
-    # Here's a placeholder example that always returns True
+def meets_criteria(fileName,start,stop):
 
     filePreName = fileName[:12]
 
@@ -123,13 +109,6 @@ def meets_criteria2(fileName,start,stop):
         else:
             return False
         
-
-def meets_criteria(file_path):
-    # Implement your filtering criteria here (e.g., creation time)
-    # For example, you can compare the creation time of the file with your start and stop times
-    # Here's a placeholder example that always returns True
-    return True
-
 def append_csv_files(input_files, output_file):
     # Open output file in write mode to clear existing content
     with open(output_file, 'w', newline='') as outfile:

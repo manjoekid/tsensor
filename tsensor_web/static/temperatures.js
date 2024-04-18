@@ -313,49 +313,12 @@ document.addEventListener('DOMContentLoaded', function () {
         timeChart.update();
     }
 
-
-    
       function searchAndDownload() {
         var startTime = document.getElementById("start-time").value;
         var stopTime = document.getElementById("stop-time").value;
-      
-        // Convert start and stop times to Unix timestamps
-        var startTimeUnix = new Date(startTime).getTime();
-        var stopTimeUnix = new Date(stopTime).getTime();
-      
-        // Make an AJAX request using fetch to the Flask server to search for files
-        fetch('/searchFiles')
-          .then(response => response.json())
-          .then(files => {
-            var downloadUrls = [];
-            
-            // Filter files created between start and stop times
-            files.forEach(function(file) {
-            var filePreName = file.substring(0,12);
-            if (filePreName == "output_temp_"){
-                var fileTime = file.substring(12,16) + "-" + file.substring(16,18) + "-" + file.substring(18,20) + "T" + file.substring(21,23) + ":" + file.substring(23,25) ;
-                var fileTimestamp = new Date(fileTime).getTime(); 
-                if (fileTimestamp >= startTimeUnix && fileTimestamp <= stopTimeUnix) {
-                    downloadUrls.push("/downloadFile/" + file);
-                }
-
-            }
-            });
-
-            // Download filtered files
-            downloadUrls.forEach(function(url) {
-              downloadFile(url);
-            });
-          })
-          .catch(error => console.error('Error searching files:', error));
-      }
-
-      function searchAndDownload2() {
-        var startTime = document.getElementById("start-time").value;
-        var stopTime = document.getElementById("stop-time").value;
     
         // Make an AJAX request using fetch to the Flask server to search for files
-        fetch('/searchFiles2', {
+        fetch('/searchFiles', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -385,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     
       
-      document.getElementById("search-btn").addEventListener("click", searchAndDownload2);
+      document.getElementById("search-btn").addEventListener("click", searchAndDownload);
 
     // Chamar a função para obter dados de temperatura a cada 1 segundo
     setInterval(obterNovosDadosTemperatura, 1000);
