@@ -185,12 +185,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var botao_GA = document.getElementById("botao_estado_ga");
         if (estado_ga) {
             botao_GA.innerText  = "Ligado";
-            botao_GA.classList.add("btn-danger");
-            botao_GA.classList.remove("btn-success");
-        }else{
-            botao_GA.innerText  = "Desligado";
             botao_GA.classList.add("btn-success");
             botao_GA.classList.remove("btn-danger");
+        }else{
+            botao_GA.innerText  = "Desligado";
+            botao_GA.classList.add("btn-danger");
+            botao_GA.classList.remove("btn-success");
         }
     }
 
