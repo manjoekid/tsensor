@@ -100,6 +100,7 @@ def search_files2():
     # Filter files based on criteria (e.g., creation time)
     filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria2(file,start,stop)]
     
+    filtered_files = sorted(filtered_files)
     append_csv_files(filtered_files,output_file)
 
     return jsonify('download.csv')
