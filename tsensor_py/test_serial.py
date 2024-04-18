@@ -44,7 +44,7 @@ csv_header_temp = ['Timestamp', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4'
                            , 'Sensor 21', 'Sensor 22', 'Sensor 23', 'Sensor 24'
                            , 'Sensor 25', 'Sensor 26', 'Sensor 27', 'Sensor 28'
                            , 'Sensor 29', 'Sensor 30', 'Sensor 31', 'Sensor 32'
-                           ,'Estado Alarme','Estado GA']
+                           ,'Estado Alarme','Estado GA','Modo de Operação']
 
 alarm_on = True
 modo = 'auto'
@@ -420,7 +420,7 @@ try:
                                         , temp_array[20], temp_array[21], temp_array[22], temp_array[23]
                                         , temp_array[24], temp_array[25], temp_array[26], temp_array[27]
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
-                                        , check_Alarme(), check_GA() ])
+                                        , check_Alarme(), check_GA(), modo ])
 
         for i in range(len(temp_array)):
             temp_max_array[i] = max(temp_max_array[i],temp_array[i])
