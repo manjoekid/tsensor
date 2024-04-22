@@ -1,0 +1,11 @@
+{
+    "docker.environment": {
+        "DOCKER_HOST": "tcp://10.0.0.111:2375"
+    },
+    "torizon_psswd": "tsensor",
+    "torizon_login": "torizon",
+    "torizon_ip": "10.0.0.111",
+    "host_ip": "10.0.0.195",
+    "torizon_gpu": "",
+    "torizon_arch": "armv7l"
+}
