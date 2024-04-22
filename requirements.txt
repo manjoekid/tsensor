@@ -3,4 +3,6 @@ gunicorn
 flask
 shared-memory-dict
 numpy
+pyModbusTCP
 datetime
+python-dotenv

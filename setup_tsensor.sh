@@ -20,7 +20,7 @@ source virtualenv_py/bin/activate || { echo "Failed to activate virtual environm
 echo "Virtual environment created and activated successfully."
 
 echo "Installing required Python packages..."
-pip3 install pyserial numpy shared-memory-dict pyModbusTCP || { echo "Failed to install Python packages. Exiting."; deactivate; exit 1; }
+pip3 install pyserial numpy shared-memory-dict pyModbusTCP python-dotenv || { echo "Failed to install Python packages. Exiting."; deactivate; exit 1; }
 echo "Python packages installed successfully."
 
 echo "Deactivating virtual environment..."
@@ -56,7 +56,7 @@ source virtualenv_web/bin/activate || { echo "Failed to activate virtual environ
 echo "Virtual environment created and activated successfully."
 
 echo "Installing required Python packages..."
-pip3 install wheel gunicorn flask numpy shared-memory-dict  || { echo "Failed to install Python packages. Exiting."; deactivate; exit 1; }
+pip3 install wheel gunicorn flask numpy shared-memory-dict python-dotenv || { echo "Failed to install Python packages. Exiting."; deactivate; exit 1; }
 echo "Python packages installed successfully."
 
 #echo "Testing gunicorn..."
