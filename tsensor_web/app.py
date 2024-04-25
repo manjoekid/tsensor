@@ -7,7 +7,9 @@ import csv
 
 #import test_serial
 
-app = Flask(__name__)
+app = Flask(__name__,
+            static_folder='static',
+            template_folder='templates')
 app.secret_key = 'your_secret_key'
 
 # Mock user data (replace with a database in a real application)
