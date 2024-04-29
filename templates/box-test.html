@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chart with Text Boxes</title>
+<!-- Bootstrap CSS -->
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  .chart {
+    width: 500px; /* adjust as needed */
+    height: 300px; /* adjust as needed */
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+  }
+  .text-box {
+    margin: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="chart">
+        <!-- Your chart code goes here -->
+        <!-- Example: -->
+        <svg width="100%" height="100%">
+          <circle cx="50%" cy="50%" r="100" fill="lightblue"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="row" id="textBoxRow">
+    <!-- Text boxes will be generated dynamically here -->
+  </div>
+</div>
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  // Function to generate text boxes dynamically
+  function generateTextBoxes() {
+    var textBoxRow = document.getElementById('textBoxRow');
+    for (var i = 0; i < 32; i++) {
+      var col = document.createElement('div');
+      col.className = 'col-md-1';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control text-box';
+      input.placeholder = 'Textbox ' + (i + 1);
+      col.appendChild(input);
+      textBoxRow.appendChild(col);
+    }
+  }
+
+  // Call the function to generate text boxes
+  generateTextBoxes();
+</script>
+
+</body>
+</html>

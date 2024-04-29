@@ -7,7 +7,7 @@ from pyModbusTCP.client import ModbusClient
 
 
 # Serial port settings for communicating with sensors
-port1 = '/dev/ttyS1'  #'COM5'       # Replace with the actual port on your system
+port1 = 'COM5' #'/dev/ttyS1'  #'COM5'       # Replace with the actual port on your system
 baudrate1 = 19200    # Use 19200 
 timeout1 = 0.04
 

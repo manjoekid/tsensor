@@ -5,7 +5,7 @@ import os
 import datetime
 import csv
 
-#import test_serial
+
 
 app = Flask(__name__,
             static_folder='static',
@@ -142,6 +142,11 @@ def download_file(filename):
     directory_path = '../tsensor_py/output/'  # Update with the path to your directory
     file_path = os.path.join(directory_path, filename)
     return send_file(file_path, as_attachment=True)
+
+@app.route('/teste')
+def teste():
+    return render_template('box-test.html')
+
 
 
 if __name__ == '__main__':

@@ -1,0 +1,9 @@
+Timestamp,Sensor,Temperatura limite,Limite,Temperatura registrada,Acionou alarme?,Contagem de alarmes consecutivos
+2024-01-31 12:17:28,2,23.7,Superior,25.73,Não,1
+2024-01-31 12:17:28,3,23.7,Superior,26.56,Não,1
+2024-01-31 12:17:33,4,23.7,Superior,25.73,Não,1
+2024-01-31 12:17:33,5,23.7,Superior,26.56,Não,1
+2024-01-31 12:17:42,6,23.7,Superior,25.73,Não,1
+2024-01-31 12:17:42,7,23.7,Superior,26.56,Não,1
+2024-01-31 12:18:59,0,20.0,Inferior,7.8,Não,0
+2024-01-31 12:18:59,1,23.7,Superior,176.87,Não,1
