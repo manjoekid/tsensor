@@ -5,10 +5,7 @@ import threading
 import os
 import datetime
 import csv
-import test_serial as tsensor
-
-
-
+import tsensor_read as tsensor
 
 
 app = Flask(__name__,
@@ -23,9 +20,6 @@ users = {
 }
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
-
-
-
 
 
 # Routes
