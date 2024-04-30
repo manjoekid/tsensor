@@ -186,7 +186,7 @@ def check_Alarme():
     return alarm_on
 
 
-def reiniciar_haste():
+def reiniciar_haste(timeOff,timeOn):
     
     data_received_mod = tcp_modbus.write_single_register(502, 1)    #Desliga haste
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -194,7 +194,7 @@ def reiniciar_haste():
     print(f"[{timestamp}] Desligando a haste - Data written: (502, 1)")
     
     print(f"Data received from Modbus: {data_received_mod}")
-    time.sleep(0.1)
+    time.sleep(timeOff)
 
     data_received_mod = tcp_modbus.write_single_register(502, 0)    #Liga haste
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -202,11 +202,11 @@ def reiniciar_haste():
     print(f"[{timestamp}] Religando a haste - Data written: (502, 0)")
     
     print(f"Data received from Modbus: {data_received_mod}")
-    time.sleep(0.1)
+    time.sleep(timeOn)
     return
 
 def inicializa_haste():
-    for x in range(2):
+    for x in range(10):
         read_count = 0
         for i in range(16):
 
@@ -226,7 +226,7 @@ def inicializa_haste():
         if read_count != 16 :
             print(f"Haste inicializada com {read_count}/16 controladores, reiniciando haste.")
             #print_erro("Erro ao inicializar haste")
-            reiniciar_haste()
+            reiniciar_haste(5,5)
         else:
             print("Haste inicializada")
             #print_erro("Haste inicializada")
@@ -244,6 +244,7 @@ try:
     check_Alarme()
 
     inicializa_haste()
+    reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
     while True:
         ### inicia marcação de tempo para que cada leitura seja feita em intervalos de 1s
@@ -443,9 +444,12 @@ try:
         else :
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
-
-        if read_count != 32:
-            reiniciar_haste()
+        if reboot_sensor_count > 600:
+            if read_count != 32:
+                reiniciar_haste(2,3)
+                reboot_sensor_count = 0
+        else:
+          reboot_sensor_count+=1
 
         frame_finish = round((time.time() * 1000 ) - frame_start)
         print(f"Total processing time: {frame_finish}ms")
