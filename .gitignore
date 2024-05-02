@@ -1,2 +1,6 @@
 tsensor_web/__pycache__/*
-
+*.pyc
+output/*.csv
+tsensor_py/output/*.csv
+.venv
+tsensor_py/.env
