@@ -233,9 +233,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     document.getElementById("button_config").addEventListener("click", function(){
-        // Prevent default form submission
-        
-    
         // Get form values
         configData.controlGeral = document.getElementsByName("inlineRadioOptions")[0].checked;
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
