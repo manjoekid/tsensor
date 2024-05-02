@@ -330,6 +330,7 @@ try:
     return_alarm_to_state(alarm_on)   #retorna alarme para o estado inicial gravado no '.env'
 
     inicializa_haste()
+    reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
     reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
