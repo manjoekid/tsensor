@@ -1,37 +1,52 @@
 import serial
 import time
 import csv
+import os
 import numpy as np
 from shared_memory_dict import SharedMemoryDict
 from pyModbusTCP.client import ModbusClient
+from dotenv import load_dotenv, set_key, find_dotenv
 
+try:
+    # Load variables from the .env file
+    load_dotenv(override=True)
 
-# Serial port settings for communicating with sensors
-port1 = 'COM5' #'/dev/ttyS1'  #'COM5'       # Replace with the actual port on your system
-baudrate1 = 19200    # Use 19200 
-timeout1 = 0.04
+    # Serial port settings for communicating with sensors
+    port_serial = os.getenv('port_serial',default='/dev/ttyS1')   #'/dev/ttyS1'  #'COM5'       # Replace with the actual port on your system
+    baudrate_serial = int(os.getenv('baudrate_serial',default='19200'))    # Use 19200 
+    timeout_serial = float(os.getenv('timeout1',default='0.04'))
 
-# Serial port settings for communicating with Modbus
-host2 = "192.168.15.130"
-port2 = 502
-unit_id2 = 1
-auto_open2 = True
+    # Serial port settings for communicating with Modbus
+    host_tcp = os.getenv('host_tcp',default='192.168.15.130')
+    port_tcp = int(os.getenv('port_tcp',default='502'))
+    unit_id_tcp = int(os.getenv('unit_id_tcp',default='1'))
+    auto_open_tcp = (os.getenv('auto_open_tcp',default='True')=='True')
+
+    CONST_READ_DELAY = 60
+    CONST_READ_TIME = 1000
+
+    upper_limit = float(os.getenv('upper_limit',default='7.0')) # limite superior de temperatura. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º acima da média
+    lower_limit = float(os.getenv('lower_limit',default='7.0'))  # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+    consecutive_limit = int(os.getenv('consecutive_limit',default='7'))     # limite de medidas acima da temperatura para acionar alarme. Por exemplo se limite é 5, o alarme vai acionar quando for realizada a 6 leitura consecutiva acima ou abaixo do limite
+
+    modo = os.getenv('modo',default='auto')
+    alarm_on = (os.getenv('alarm_on',default='True')=='True')
+
+    #set_key(find_dotenv(), 'upper_limit', "7.7")
+    #load_dotenv(override=True)
+
+except:
+    print("Erro ao carregar variáveis de ambiente")
 
 current_hour = 0
 current_hour_alarm = 0
 
 
-CONST_READ_DELAY = 60
-CONST_READ_TIME = 1000
-
-CONST_UPPER_LIMIT       = 7.0  # limite superior de temperatura. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º acima da média
-CONST_LOWER_LIMIT       = 7.0  # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
-CONST_CONSECUTIVE_LIMIT = 7     # limite de medidas acima da temperatura para acionar alarme. Por exemplo se limite é 5, o alarme vai acionar quando for realizada a 6 leitura consecutiva acima ou abaixo do limite
-
 # Create a serial object
-ser_sensor = serial.Serial(port1, baudrate1, timeout=timeout1)
+ser_sensor = serial.Serial(port_serial, baudrate_serial, timeout=timeout_serial)
 #ser_sensor = serial.Serial(port=port1, baudrate=baudrate1, bytesize=8, parity='N', stopbits=2, timeout=timeout1, xonxoff=0, rtscts=0)
-tcp_modbus = ModbusClient(host=host2, port=port2, unit_id=unit_id2, auto_open=auto_open2)
+tcp_modbus = ModbusClient(host=host_tcp, port=port_tcp, unit_id=unit_id_tcp, auto_open=auto_open_tcp)
+
 
 # Open a CSV file for writing temp
 current_datetime = time.strftime("%Y%m%d_%H%M%S")
@@ -46,8 +61,8 @@ csv_header_temp = ['Timestamp', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4'
                            , 'Sensor 29', 'Sensor 30', 'Sensor 31', 'Sensor 32'
                            ,'Estado Alarme','Estado GA','Modo de Operação']
 
-alarm_on = True
-modo = 'auto'
+
+
 
 average_temp = 0.0   #temperatura média 
 
@@ -57,10 +72,11 @@ temp_max_array = np.zeros(32, dtype='float32')
 temp_min_array = np.zeros(32, dtype='float32')
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
-tsensor_pipe["estado"] = True
+tsensor_pipe["estado"] = alarm_on
 tsensor_pipe["estado_ga"] = False
-tsensor_pipe["limite_superior"] = CONST_UPPER_LIMIT
-tsensor_pipe["limite_inferior"] = CONST_LOWER_LIMIT
+tsensor_pipe["limite_superior"] = upper_limit
+tsensor_pipe["limite_inferior"] = lower_limit
+tsensor_pipe["limite_consecutivo"] = consecutive_limit
 tsensor_pipe["modo"] = modo
 tsensor_pipe["media"] = average_temp
 tsensor_pipe["temperature"] = temp_max_array.tolist()
@@ -95,6 +111,9 @@ def turn_off_alarm():
         data_received_mod = tcp_modbus.write_single_register(500, 0)    #Desliga alarme
         alarm_on = False
         tsensor_pipe["estado"] = False
+        
+        set_key(find_dotenv(), 'alarm_on', 'False')   #salva estado do alarme no '.env'
+
         print(f"[{timestamp}] Turning off Alarm - Data written: (500, 0)")
         # Reading data from the RS485 port
         #print_erro("Desligando Alarme")
@@ -103,7 +122,7 @@ def turn_off_alarm():
 
 def turn_on_alarm():
     global alarm_on
-    #if check_Alarme() :
+    #if check_Alarm() :
     #    return
 
     if tsensor_pipe["modo"] == 'auto' :
@@ -121,6 +140,9 @@ def turn_on_alarm():
             print(f"Data received from Modbus: {data_received_mod}")
             alarm_on = True
             tsensor_pipe["estado"] = True
+
+            set_key(find_dotenv(), 'alarm_on', 'True')   #salva estado do alarme no '.env'
+
             return
         else:
             print("Erro - Alarme não foi acionado - GA Desligado")
@@ -142,6 +164,7 @@ def turn_on_alarm():
         print(f"Data received from Modbus: {data_received_mod}")
         alarm_on = True
         tsensor_pipe["estado"] = True
+        set_key(find_dotenv(), 'alarm_on', 'True')   #salva estado do alarme no '.env'
         return
 
 def check_GA():
@@ -162,8 +185,16 @@ def check_GA():
         tsensor_pipe["estado_ga"] = False
         return False        
 
+def return_alarm_to_state(alarm_saved_state):
+    if (alarm_saved_state != check_Alarm()):
+        alarm_state = 1 if alarm_saved_state else 0
+        data_received_mod = tcp_modbus.write_single_register(500, alarm_state)    #Liga/desliga alarme
+        alarm_on = alarm_state
+        tsensor_pipe["estado"] = alarm_on
+        print(f"Inicializando o alarme conforme dados salvos '.env'. Modbus retornou: {data_received_mod}")
 
-def check_Alarme():
+
+def check_Alarm():
     global alarm_on
     # Reading data to the TCP port
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
@@ -174,16 +205,35 @@ def check_Alarme():
         
     print(f"Data received from Modbus: {data_received_mod}")
 
-    if data_received_mod == [1] :
-        alarm_on = True
-        tsensor_pipe["estado"] = True
-    else:
-        alarm_on = False
-        tsensor_pipe["estado"] = False
+    alarm_state = (data_received_mod == [1]) 
+    if (alarm_on!=alarm_state):
+        print(f"[{timestamp}] Alarm changed state to {alarm_state}")
+        alarm_on = alarm_state
+        tsensor_pipe["estado"] = alarm_on
+        set_key(find_dotenv(), 'alarm_on', 'True' if alarm_on else 'False')   #salva estado do alarme no '.env'
 
-    print(f"[{timestamp}] Alarme is {alarm_on}")
+    return alarm_state
 
-    return alarm_on
+def check_update_from_interface():
+    global modo,upper_limit,lower_limit,consecutive_limit
+    if tsensor_pipe["modo"] != modo :
+        modo = tsensor_pipe["modo"]
+        set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
+        if modo == 'ligado':
+            turn_on_alarm()
+        else :
+            turn_off_alarm()
+    if tsensor_pipe["limite_superior"] != upper_limit :
+        upper_limit = tsensor_pipe["limite_superior"]
+        set_key(find_dotenv(), 'upper_limit', str(upper_limit))   #salva estado do alarme no '.env'
+    
+    if tsensor_pipe["limite_inferior"] != lower_limit :
+        lower_limit = tsensor_pipe["limite_inferior"]
+        set_key(find_dotenv(), 'lower_limit', str(lower_limit))   #salva estado do alarme no '.env'
+
+    if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
+        consecutive_limit = tsensor_pipe["limite_consecutivo"]
+        set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   #salva estado do alarme no '.env'
 
 
 def reiniciar_haste():
@@ -240,8 +290,7 @@ try:
     alarm_down_array = np.zeros(32, dtype='int')
     #print_erro("Sistema inicializado")
 
-    #turn_off_alarm()
-    check_Alarme()
+    return_alarm_to_state(alarm_on)   #retorna alarme para o estado inicial gravado no '.env'
 
     inicializa_haste()
 
@@ -307,8 +356,8 @@ try:
             #time.sleep(5)
 
 
-            upper_limit = average_temp + CONST_UPPER_LIMIT
-            lower_limit = average_temp - CONST_LOWER_LIMIT
+            upper_limit = average_temp + upper_limit
+            lower_limit = average_temp - lower_limit
 
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
 
@@ -320,7 +369,7 @@ try:
                 ### verifica se ultrapassou limite superior
                 if temp_array[i*2] > upper_limit :
                     alarm_up_array[i*2] += 1
-                    if alarm_up_array[i*2] > CONST_CONSECUTIVE_LIMIT :
+                    if alarm_up_array[i*2] > consecutive_limit :
                         turn_on_alarm()
                         
 
@@ -335,7 +384,7 @@ try:
                 ### verifica se ultrapassou limite inferior
                 if temp_array[i*2] < lower_limit :
                     alarm_down_array[i*2] += 1
-                    if alarm_down_array[i*2] > CONST_CONSECUTIVE_LIMIT :
+                    if alarm_down_array[i*2] > consecutive_limit :
                         turn_on_alarm()
                         
 
@@ -355,7 +404,7 @@ try:
                 ### verifica se ultrapassou limite superior
                 if temp_array[(i*2)+1] > upper_limit :
                     alarm_up_array[(i*2)+1] += 1
-                    if alarm_up_array[(i*2)+1] > CONST_CONSECUTIVE_LIMIT :
+                    if alarm_up_array[(i*2)+1] > consecutive_limit :
                         turn_on_alarm()
 
                         print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
@@ -369,7 +418,7 @@ try:
                 ### verifica se ultrapassou limite inferior
                 if temp_array[(i*2)+1] < lower_limit :
                     alarm_down_array[(i*2)+1] += 1
-                    if alarm_down_array[(i*2)+1] > CONST_CONSECUTIVE_LIMIT :
+                    if alarm_down_array[(i*2)+1] > consecutive_limit :
                         turn_on_alarm()
 
                         print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
@@ -394,22 +443,19 @@ try:
                 #time.sleep(0.01)
                 
 
-
-        if tsensor_pipe["modo"] != modo :
-            modo = tsensor_pipe["modo"]
-            if modo == 'ligado':
-                turn_on_alarm()
-            else :
-                turn_off_alarm()
-
-        if alarm_on :
-            if ((max(alarm_down_array) < CONST_CONSECUTIVE_LIMIT) and (max(alarm_up_array) < CONST_CONSECUTIVE_LIMIT)) :
-                turn_off_alarm()
-                pass
-            else :
-                turn_on_alarm()
-                pass
+        check_update_from_interface()
         
+        if alarm_on :
+            if ((max(alarm_down_array) < consecutive_limit) and (max(alarm_up_array) < consecutive_limit)) :
+                turn_off_alarm()
+                pass
+            else :
+                turn_on_alarm()
+                pass
+
+
+        check_Alarm()
+
         with open(csv_file_path_temp, mode='a', newline='') as csv_file_temp:
             csv_writer_temp = csv.writer(csv_file_temp)
             csv_writer_temp.writerow([timestamp, temp_array[0], temp_array[1], temp_array[2], temp_array[3]
@@ -420,7 +466,7 @@ try:
                                         , temp_array[20], temp_array[21], temp_array[22], temp_array[23]
                                         , temp_array[24], temp_array[25], temp_array[26], temp_array[27]
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
-                                        , check_Alarme(), check_GA(), modo ])
+                                        , alarm_on, check_GA(), modo ])
 
         for i in range(len(temp_array)):
             temp_max_array[i] = max(temp_max_array[i],temp_array[i])

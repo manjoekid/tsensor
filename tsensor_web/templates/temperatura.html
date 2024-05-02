@@ -105,9 +105,9 @@
           </button>
         </div>
         <div class="modal-body">
-            <form>
+            <form id="config_form">
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
+                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1" checked>
                     <label class="form-check-label" for="inlineRadio1">Controle Geral</label>
                   </div>
                   <div class="form-check form-check-inline">
@@ -115,39 +115,40 @@
                     <label class="form-check-label" for="inlineRadio2">Controle Individual</label>
                   </div>
                   <br>
-                <select id="sensor_select" name="Sensor select" required>
-                    <option value="Sensor 01">Sensor 01</option>
-                    <option value="Sensor 02">Sensor 02</option>
-                    <option value="Sensor 03">Sensor 03</option>
-                    <option value="Sensor 04">Sensor 04</option>
-                    <option value="Sensor 05">Sensor 05</option>
-                    <option value="Sensor 06">Sensor 06</option>
-                    <option value="Sensor 07">Sensor 07</option>
-                    <option value="Sensor 08">Sensor 08</option>
-                    <option value="Sensor 09">Sensor 09</option>
-                    <option value="Sensor 10">Sensor 10</option>
-                    <option value="Sensor 11">Sensor 11</option>
-                    <option value="Sensor 12">Sensor 12</option>
-                    <option value="Sensor 13">Sensor 13</option>
-                    <option value="Sensor 14">Sensor 14</option>
-                    <option value="Sensor 15">Sensor 15</option>
-                    <option value="Sensor 16">Sensor 16</option>
-                    <option value="Sensor 17">Sensor 17</option>
-                    <option value="Sensor 18">Sensor 18</option>
-                    <option value="Sensor 19">Sensor 19</option>
-                    <option value="Sensor 20">Sensor 20</option>
-                    <option value="Sensor 21">Sensor 21</option>
-                    <option value="Sensor 22">Sensor 22</option>
-                    <option value="Sensor 23">Sensor 23</option>
-                    <option value="Sensor 24">Sensor 24</option>
-                    <option value="Sensor 25">Sensor 25</option>
-                    <option value="Sensor 26">Sensor 26</option>
-                    <option value="Sensor 27">Sensor 27</option>
-                    <option value="Sensor 28">Sensor 28</option>
-                    <option value="Sensor 29">Sensor 29</option>
-                    <option value="Sensor 30">Sensor 30</option>                
-                    <option value="Sensor 31">Sensor 31</option>
-                    <option value="Sensor 32">Sensor 32</option>
+                <select id="sensor_select" name="Sensor select" required >
+                    <option value="0">Todos</option>
+                    <option value="1">Sensor 01</option>
+                    <option value="2">Sensor 02</option>
+                    <option value="3">Sensor 03</option>
+                    <option value="4">Sensor 04</option>
+                    <option value="5">Sensor 05</option>
+                    <option value="6">Sensor 06</option>
+                    <option value="7">Sensor 07</option>
+                    <option value="8">Sensor 08</option>
+                    <option value="9">Sensor 09</option>
+                    <option value="10">Sensor 10</option>
+                    <option value="11">Sensor 11</option>
+                    <option value="12">Sensor 12</option>
+                    <option value="13">Sensor 13</option>
+                    <option value="14">Sensor 14</option>
+                    <option value="15">Sensor 15</option>
+                    <option value="16">Sensor 16</option>
+                    <option value="17">Sensor 17</option>
+                    <option value="18">Sensor 18</option>
+                    <option value="19">Sensor 19</option>
+                    <option value="20">Sensor 20</option>
+                    <option value="21">Sensor 21</option>
+                    <option value="22">Sensor 22</option>
+                    <option value="23">Sensor 23</option>
+                    <option value="24">Sensor 24</option>
+                    <option value="25">Sensor 25</option>
+                    <option value="26">Sensor 26</option>
+                    <option value="27">Sensor 27</option>
+                    <option value="28">Sensor 28</option>
+                    <option value="29">Sensor 29</option>
+                    <option value="30">Sensor 30</option>                
+                    <option value="31">Sensor 31</option>
+                    <option value="32">Sensor 32</option>
                 </select>
                 <br>
                 <label for="upper_temp">Temperatura Superior:</label>
@@ -157,13 +158,13 @@
                 <input type="number" id="lower_temp" name="lower_temp" required>
                 <br>
                 <label for="base_type">Base Análise:</label>
-                <select id="base_type" name="base_type" required>
+                <select id="base_type" name="base_type" disabled>
                     <option value="total_average">Média Geral</option>
                     <option value="fixed">Fixa</option>
                     <option value="single_average">Média do sensor</option>
                     <option value="other">Sensor referência</option>
                 </select>
-                <input type="number" id="base_value" name="base_value" required>
+                <input type="number" id="base_value" name="base_value" disabled>
                 <br>
                 <br>
                 <label for="time">Tempo:</label>
@@ -173,7 +174,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
+          <button type="button" class="btn btn-primary" id="button_config">Salvar</button>
         </div>
       </div>
     </div>
