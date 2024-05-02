@@ -59,8 +59,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Função para atualizar o gráfico com os novos dados
     function atualizarGrafico(temperaturas,media,upper,lower,time) {
         var ctx = document.getElementById('temperatureChart').getContext('2d');
-        configData.upper[0] = upper;
-        configData.lower[0] = lower;
+        configData.upper = upper;
+        configData.lower = lower;
         configData.time = time;
         tempChart = new Chart(ctx, {
             data: {
@@ -128,8 +128,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function atualizaDadosGrafico(temperaturas,media,upper,lower,time)
     {
-        configData.upper[0] = upper;
-        configData.lower[0] = lower;
+        configData.upper = upper;
+        configData.lower = lower;
         configData.time = time;
         var newFloatArray = temperaturas.real; // Generating random float array
         newFloatArray.push(media);
