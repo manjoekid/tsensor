@@ -49,7 +49,7 @@ try:
 
 except:
     print("Erro ao carregar variáveis de ambiente")
-
+    
 current_hour = 0
 current_hour_alarm = 0
 
@@ -99,16 +99,25 @@ tsensor_pipe["temperature_min"] = temp_max_array.tolist()
 
 
 
-#save_alarm_to_csv(i*2,upper_limit,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
-def save_alarm_to_csv(sensor,temp_limite,limite,temperatura,acionamento,contagem):
-    global csv_file_path_alarm
-    global current_hour_alarm
-    global csv_file_alarm
+def save_alarm_to_log(sensor,temp_limite,limite,temperatura,acionamento,contagem):
+    global csv_file_path_log
+    #global current_hour_alarm
+    global csv_file_log
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
     with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
             csv_writer_temp = csv.writer(csv_file_log)
-            csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+sensor+" com temperatura limite de "+temp_limite, limite,temperatura,acionamento,contagem])
+            csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+str(sensor)+" com limite "+limite+" de "+str(temp_limite)+"ºC e temperatura de "+str(temperatura)+"ºC . Acionou alarme? "+acionamento+" com contagem de "+str(contagem)])
+
+def save_change_to_log(tipo,mensagem):
+    global csv_file_path_log
+    #global current_hour_alarm
+    global csv_file_log
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
+
+    with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
+            csv_writer_temp = csv.writer(csv_file_log)
+            csv_writer_temp.writerow([timestamp, tipo, mensagem])
 
 
 def turn_off_alarm():
@@ -128,7 +137,7 @@ def turn_off_alarm():
 
         print(f"[{timestamp}] Turning off Alarm - Data written: (500, 0)")
         # Reading data from the RS485 port
-        #print_erro("Desligando Alarme")
+        save_change_to_log("Modbus","Desligando Alarme, Modbus retornou "+str(data_received_mod))
         print(f"Data received from Modbus: {data_received_mod}")
         return
 
@@ -147,7 +156,7 @@ def turn_on_alarm():
 
 
             print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
-            #print_erro("Ligando Alarme")
+            save_change_to_log("Modbus","Ligando Alarme, Modbus retornou "+str(data_received_mod))
 
             print(f"Data received from Modbus: {data_received_mod}")
             alarm_on = True
@@ -158,7 +167,7 @@ def turn_on_alarm():
             return
         else:
             print("Erro - Alarme não foi acionado - GA Desligado")
-            #print_erro("Erro - Alarme não foi acionado - GA Desligado")
+            save_change_to_log("Erro","Alarme não foi acionado - GA Desligado")
             #alarm_on = False
             #tsensor_pipe["estado"] = False
             return
@@ -171,7 +180,7 @@ def turn_on_alarm():
 
 
         print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
-        #print_erro("Ligando Alarme")
+        save_change_to_log("Modbus","Ligando Alarme, Modbus retornou "+str(data_received_mod))
 
         print(f"Data received from Modbus: {data_received_mod}")
         alarm_on = True
@@ -231,6 +240,7 @@ def check_update_from_interface():
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
+        save_change_to_log("Info","Modo alterado para "+modo)
         if modo == 'ligado':
             turn_on_alarm()
         else :
@@ -238,19 +248,19 @@ def check_update_from_interface():
     if tsensor_pipe["limite_superior"] != upper_limit :
         upper_limit = tsensor_pipe["limite_superior"]
         set_key(find_dotenv(), 'upper_limit', str(upper_limit))   #salva estado do alarme no '.env'
-    
+        save_change_to_log("Info","Limite superior alterado para "+str(upper_limit))
     if tsensor_pipe["limite_inferior"] != lower_limit :
         lower_limit = tsensor_pipe["limite_inferior"]
         set_key(find_dotenv(), 'lower_limit', str(lower_limit))   #salva estado do alarme no '.env'
-
+        save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit))
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
         consecutive_limit = tsensor_pipe["limite_consecutivo"]
         set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   #salva estado do alarme no '.env'
-
+        save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit))
     if tsensor_pipe["general_limit"] != general_limit :
         general_limit = tsensor_pipe["general_limit"]
         set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
-
+        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ "Geral" if general_limit else "Individual")
 
 def reiniciar_haste(timeOff,timeOn):
     
@@ -291,24 +301,37 @@ def inicializa_haste():
 
         if read_count != 16 :
             print(f"Haste inicializada com {read_count}/16 controladores, reiniciando haste.")
-            #print_erro("Erro ao inicializar haste")
+            save_change_to_log("Erro","Haste inicializada com "+str(read_count)+"/16 controladores, reiniciando haste.")
             reiniciar_haste(5,5)
         else:
             print("Haste inicializada")
-            #print_erro("Haste inicializada")
+            save_change_to_log("Info","Haste inicializada com todos os controladores OK.")
             return
-    print("Haste inicializada porém com sensores faltando")
+    print("Haste inicializada porém com sensores faltando.")
+    save_change_to_log("Info","Haste inicializada com sensores faltando.")
 
 
 try:
     
     alarm_up_array = np.zeros(32, dtype='int')
     alarm_down_array = np.zeros(32, dtype='int')
-    #print_erro("Sistema inicializado")
+    
+    if current_hour == 0 :
+        current_hour = time.localtime().tm_hour 
+        with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
+            csv_writer_temp = csv.writer(csv_file_temp)
+            csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
+        with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
+            csv_writer_log = csv.writer(csv_file_log)
+            csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
+
+    save_change_to_log("Info","Sistema iniciado.")
 
     return_alarm_to_state(alarm_on)   #retorna alarme para o estado inicial gravado no '.env'
 
     inicializa_haste()
+    reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
+
     reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
     while True:
@@ -316,12 +339,6 @@ try:
         frame_start = time.time() * 1000
 
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
-
-        if current_hour == 0 :
-            current_hour = time.localtime().tm_hour 
-            with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
-                csv_writer_temp = csv.writer(csv_file_temp)
-                csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
 
         # Check if the hour has changed
 
@@ -333,10 +350,14 @@ try:
             # Create a new CSV file
             current_datetime = time.strftime("%Y%m%d_%H%M%S")
             csv_file_path_temp = f'./output/output_temp_{current_datetime}.csv'
+            csv_file_path_log = f'./output/output_log_{current_datetime}.csv'
             with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
                 csv_writer_temp = csv.writer(csv_file_temp)
                 csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
-                print(f"[{timestamp}] Creating a new CSV file for the new hour.")
+            with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
+                csv_writer_log = csv.writer(csv_file_log)
+                csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
+            print(f"[{timestamp}] Creating a new CSV file for the new hour.")
 
 
         ### zera o array de temperaturas
@@ -396,9 +417,9 @@ try:
                         
 
                         print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                        #save_alarm_to_csv(i*2,upper_limit,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,upper_limit,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
                     else: 
-                        #save_alarm_to_csv(i*2,upper_limit,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,upper_limit,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
                         pass
                 else :
                     alarm_up_array[i*2] = 0
@@ -411,9 +432,9 @@ try:
                         
 
                         print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                        #save_alarm_to_csv(i*2,lower_limit,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,lower_limit,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
                     else: 
-                        #save_alarm_to_csv(i*2,lower_limit,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,lower_limit,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
                         pass
                 else :
                     alarm_down_array[i*2] = 0
@@ -435,9 +456,9 @@ try:
                         turn_on_alarm()
 
                         print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                        #save_alarm_to_csv((i*2)+1,upper_limit,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,upper_limit,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
                     else: 
-                        #save_alarm_to_csv((i*2)+1,upper_limit,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,upper_limit,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
                         pass
                 else :
                     alarm_up_array[(i*2)+1] = 0
@@ -449,9 +470,9 @@ try:
                         turn_on_alarm()
 
                         print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                        #save_alarm_to_csv((i*2)+1,lower_limit,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,lower_limit,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
                     else: 
-                        #save_alarm_to_csv((i*2)+1,lower_limit,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,lower_limit,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
                         pass
 
                 else :
@@ -516,12 +537,14 @@ try:
         else :
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
-        if read_count != 32:
-            if reboot_sensor_count > 600:
+
+        if read_count != 32:                #verifica se tem falha na leitura dos sensores
+            reboot_sensor_count+=1
+            if reboot_sensor_count > 600:   #se tiver por mais de 10min com sensores faltando, reinicia haste     
                 reiniciar_haste(2,3)
                 reboot_sensor_count = 0
-            else:
-               reboot_sensor_count+=1
+        else:
+            reboot_sensor_count = 0        #se estiver OK, zera o contador
 
         frame_finish = round((time.time() * 1000 ) - frame_start)
         print(f"Total processing time: {frame_finish}ms")
@@ -534,10 +557,10 @@ try:
 except KeyboardInterrupt:
     # Handle KeyboardInterrupt (Ctrl+C) to gracefully exit the loop
     print("Program terminated by user.")
-    #print_erro("Programa finalizado pelo usuário")
+    save_change_to_log("Info","Sistema finalizado pelo usuário.")
 except serial.SerialTimeoutException:
     print("Program terminated by SerialTimeoutException. Modbus not connected or error")
-    #print_erro("Programa finalizado por exceção ou com erro")
+    save_change_to_log("Erro","Programa finalizado por exceção ou com erro.")
 finally:
     # Close the serial port
     ser_sensor.close()

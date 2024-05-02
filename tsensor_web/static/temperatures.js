@@ -251,9 +251,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // For example, you can submit the form using AJAX or redirect to another page
         // Here, we'll just log the values to the console
         
-        configData.upper[sensor_selected] = parseInt(upper);
-        configData.lower[sensor_selected] = parseInt(lower);
-        configData.time[sensor_selected] = parseInt(time);
+        configData.upper[sensor_selected] = parseFloat(upper);
+        configData.lower[sensor_selected] = parseFloat(lower);
+        configData.time = parseInt(time);
 
         enviaConfig();
 
