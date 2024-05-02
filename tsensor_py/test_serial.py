@@ -282,7 +282,7 @@ def reiniciar_haste():
     return
 
 def inicializa_haste():
-    for x in range(2):
+    for x in range(10):
         read_count = 0
         for i in range(16):
 
@@ -315,6 +315,16 @@ try:
     
     alarm_up_array = np.zeros(32, dtype='int')
     alarm_down_array = np.zeros(32, dtype='int')
+    
+    if current_hour == 0 :
+        current_hour = time.localtime().tm_hour 
+        with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
+            csv_writer_temp = csv.writer(csv_file_temp)
+            csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
+        with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
+            csv_writer_log = csv.writer(csv_file_log)
+            csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
+
     save_change_to_log("Info","Sistema iniciado.")
 
     return_alarm_to_state(alarm_on)   #retorna alarme para o estado inicial gravado no '.env'
@@ -326,15 +336,6 @@ try:
         frame_start = time.time() * 1000
 
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
-
-        if current_hour == 0 :
-            current_hour = time.localtime().tm_hour 
-            with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
-                csv_writer_temp = csv.writer(csv_file_temp)
-                csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
-            with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
-                csv_writer_log = csv.writer(csv_file_log)
-                csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
 
         # Check if the hour has changed
 
