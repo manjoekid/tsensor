@@ -356,8 +356,8 @@ try:
             #time.sleep(5)
 
 
-            upper_limit = average_temp + upper_limit
-            lower_limit = average_temp - lower_limit
+            upper_limit_total = average_temp + upper_limit
+            lower_limit_total = average_temp - lower_limit
 
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
 
@@ -367,7 +367,7 @@ try:
                 temp_array[i*2] = int(data_received[4:8],16)/100
                 temp_shm[i*2] = int(data_received[4:8],16)/100
                 ### verifica se ultrapassou limite superior
-                if temp_array[i*2] > upper_limit :
+                if temp_array[i*2] > upper_limit_total :
                     alarm_up_array[i*2] += 1
                     if alarm_up_array[i*2] > consecutive_limit :
                         turn_on_alarm()
@@ -382,7 +382,7 @@ try:
                     alarm_up_array[i*2] = 0
 
                 ### verifica se ultrapassou limite inferior
-                if temp_array[i*2] < lower_limit :
+                if temp_array[i*2] < lower_limit_total :
                     alarm_down_array[i*2] += 1
                     if alarm_down_array[i*2] > consecutive_limit :
                         turn_on_alarm()
@@ -402,7 +402,7 @@ try:
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
                 temp_shm[(i*2)+1] = int(data_received[8:12],16)/100
                 ### verifica se ultrapassou limite superior
-                if temp_array[(i*2)+1] > upper_limit :
+                if temp_array[(i*2)+1] > upper_limit_total :
                     alarm_up_array[(i*2)+1] += 1
                     if alarm_up_array[(i*2)+1] > consecutive_limit :
                         turn_on_alarm()
@@ -416,7 +416,7 @@ try:
                     alarm_up_array[(i*2)+1] = 0
 
                 ### verifica se ultrapassou limite inferior
-                if temp_array[(i*2)+1] < lower_limit :
+                if temp_array[(i*2)+1] < lower_limit_total :
                     alarm_down_array[(i*2)+1] += 1
                     if alarm_down_array[(i*2)+1] > consecutive_limit :
                         turn_on_alarm()
