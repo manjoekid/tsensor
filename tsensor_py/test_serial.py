@@ -262,7 +262,7 @@ def check_update_from_interface():
         set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
         save_change_to_log("Info","Modo de avaliação de limites alterado para "+ "Geral" if general_limit else "Individual")
 
-def reiniciar_haste():
+def reiniciar_haste(timeOff,timeOn):
     
     data_received_mod = tcp_modbus.write_single_register(502, 1)    #Desliga haste
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -270,7 +270,7 @@ def reiniciar_haste():
     print(f"[{timestamp}] Desligando a haste - Data written: (502, 1)")
     
     print(f"Data received from Modbus: {data_received_mod}")
-    time.sleep(0.1)
+    time.sleep(timeOff)
 
     data_received_mod = tcp_modbus.write_single_register(502, 0)    #Liga haste
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -278,7 +278,7 @@ def reiniciar_haste():
     print(f"[{timestamp}] Religando a haste - Data written: (502, 0)")
     
     print(f"Data received from Modbus: {data_received_mod}")
-    time.sleep(0.1)
+    time.sleep(timeOn)
     return
 
 def inicializa_haste():
@@ -302,7 +302,7 @@ def inicializa_haste():
         if read_count != 16 :
             print(f"Haste inicializada com {read_count}/16 controladores, reiniciando haste.")
             save_change_to_log("Erro","Haste inicializada com "+str(read_count)+"/16 controladores, reiniciando haste.")
-            reiniciar_haste()
+            reiniciar_haste(5,5)
         else:
             print("Haste inicializada")
             save_change_to_log("Info","Haste inicializada com todos os controladores OK.")
@@ -330,6 +330,8 @@ try:
     return_alarm_to_state(alarm_on)   #retorna alarme para o estado inicial gravado no '.env'
 
     inicializa_haste()
+
+    reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
     while True:
         ### inicia marcação de tempo para que cada leitura seja feita em intervalos de 1s
@@ -535,8 +537,13 @@ try:
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
 
-        if read_count != 32:
-            reiniciar_haste()
+        if read_count != 32:                #verifica se tem falha na leitura dos sensores
+            reboot_sensor_count+=1
+            if reboot_sensor_count > 600:   #se tiver por mais de 10min com sensores faltando, reinicia haste     
+                reiniciar_haste(2,3)
+                reboot_sensor_count = 0
+        else:
+            reboot_sensor_count = 0        #se estiver OK, zera o contador
 
         frame_finish = round((time.time() * 1000 ) - frame_start)
         print(f"Total processing time: {frame_finish}ms")
