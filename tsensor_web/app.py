@@ -60,14 +60,19 @@ def dados_temperatura():
     estado_atual = tsensor_pipe["estado"]
     estado_ga = tsensor_pipe["estado_ga"]
     temperature_media = tsensor_pipe["media"]
-
+    upper_limit = tsensor_pipe["limite_superior"]
+    lower_limit = tsensor_pipe["limite_inferior"]
+    time = tsensor_pipe["limite_consecutivo"]
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
                                         'min': temperature_min},
                         'modo': modo_atual,
                         'estado':estado_atual,
                         'estado_ga':estado_ga,
-                        'media':temperature_media})
+                        'media':temperature_media,
+                        'upper_limit':upper_limit,
+                        'lower_limit':lower_limit,
+                        'time':time})
 
     return intermed
 
@@ -86,10 +91,13 @@ def alterar_config():
     upper_temp = request.json.get('upper')
     lower_temp = request.json.get('lower')
     time = request.json.get('time')
-    tsensor_pipe["limite_superior"] = upper_temp[0]
-    tsensor_pipe["limite_inferior"] = lower_temp[0]
-    tsensor_pipe["limite_consecutivo"] = time[0]
+    general_limit = request.json.get('controlGeral')
     
+    tsensor_pipe["limite_superior"] = upper_temp
+    tsensor_pipe["limite_inferior"] = lower_temp
+    tsensor_pipe["limite_consecutivo"] = time
+    tsensor_pipe["general_limit"] = general_limit
+
     return jsonify({'message': 'Config alterada'})
 
 @app.route('/searchFiles', methods=['POST'])

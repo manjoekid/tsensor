@@ -18,13 +18,10 @@ class CircularBuffer {
   }
   
 var configData = {
-controlGeral: true, // Geral (true) ou individual (false)
-upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 0 é o valor geral
-lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
-                                                            // base é 'a' média geral, 'f' fixo, 'm' média individual, 's' sensor de referência
-base :  ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a'],
-baseValue : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-time : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7]
+    controlGeral: true, // Geral (true) ou individual (false)
+    upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 0 é o valor geral
+    lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
+    time : 7
 };
 
 
@@ -42,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                atualizarGrafico(data.temperaturas,data.media);
+                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time);
                 atualizarModo(data.modo);
                 atualizarEstado(data.estado,data.estado_ga);
             })
@@ -53,16 +50,18 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                            atualizaDadosGrafico(data.temperaturas,data.media);
+                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time);
                             atualizarModo(data.modo);
                             atualizarEstado(data.estado,data.estado_ga);
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
     // Função para atualizar o gráfico com os novos dados
-    function atualizarGrafico(temperaturas,media) {
+    function atualizarGrafico(temperaturas,media,upper,lower,time) {
         var ctx = document.getElementById('temperatureChart').getContext('2d');
-        
+        configData.upper[0] = upper;
+        configData.lower[0] = lower;
+        configData.time = time;
         tempChart = new Chart(ctx, {
             data: {
                 labels: Array.from({length: temperaturas.max.length}, (_, i) => i + 1),
@@ -127,8 +126,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function atualizaDadosGrafico(temperaturas,media)
+    function atualizaDadosGrafico(temperaturas,media,upper,lower,time)
     {
+        configData.upper[0] = upper;
+        configData.lower[0] = lower;
+        configData.time = time;
         var newFloatArray = temperaturas.real; // Generating random float array
         newFloatArray.push(media);
         newFloatArray.push(media+configData.upper[0]);
@@ -257,9 +259,96 @@ document.addEventListener('DOMContentLoaded', function () {
 
       });
 
+      document.getElementById("botao_modal").addEventListener("click", function(){
+        // Get form values
+        document.getElementById("time").value = configData.time;
+        document.getElementById("upper_temp").value = configData.upper[0];
+        document.getElementById("lower_temp").value = configData.lower[0];
+        document.getElementById("sensor_select").value = "0"
+        if (configData.controlGeral){
+            document.getElementById("sensor_select").disabled = true;
+        }else{
+            document.getElementById("sensor_select").disabled = false;
+        }
+    });
 
+      document.getElementById('inlineRadio1').addEventListener('change', function () {
+        if (document.getElementsByName("inlineRadioOptions")[0].checked){
+            document.getElementById("sensor_select").disabled = true;
+            document.getElementById("sensor_select").value = "0"
+        }else{
+            document.getElementById("sensor_select").disabled = false;
+        }
+        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
+        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
+        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
 
+      });
 
+      document.getElementById('inlineRadio2').addEventListener('change', function () {
+        if (document.getElementsByName("inlineRadioOptions")[0].checked){
+            document.getElementById("sensor_select").disabled = true;
+            document.getElementById("sensor_select").value = "0"
+        }else{
+            document.getElementById("sensor_select").disabled = false;
+        }
+        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
+        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
+        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+      });
+
+      document.getElementById('sensor_select').addEventListener('change', function () {
+
+        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
+        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
+        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+
+    });
+
+      document.getElementById('time').addEventListener('input', function () {
+        var currentValue = parseInt(this.value);
+        document.getElementById("form_info").textContent = "";
+        // Check if the current value is less than 1
+        if (currentValue < 1) {
+          // If less than 1, set the value to 1
+          this.value = 1;
+          document.getElementById("form_info").textContent = "Valor do tempo deve ser um número inteiro maior que 1"
+        }else{
+            this.value = currentValue;
+        }
+      });
+
+      document.getElementById('upper_temp').addEventListener('input', function () {
+        var currentValue = parseFloat(this.value);
+        document.getElementById("form_info").textContent = "";
+        if (isNaN(currentValue)){
+            document.getElementById("form_info").textContent = "Valor do limite superior deve ser um número. Use ',' para decimais: 1,5"
+        }
+
+        // Check if the current value is less than 1
+        if (currentValue <= 0) {
+          // If less than 1, set the value to 1
+          this.value = 1;
+          document.getElementById("form_info").textContent = "Valor do limite superior deve ser um número maior que 0"
+        }
+
+      });
+
+      document.getElementById('lower_temp').addEventListener('input', function () {
+        var currentValue = parseFloat(this.value);
+        document.getElementById("form_info").textContent = "";
+        if (isNaN(currentValue)){
+            document.getElementById("form_info").textContent = "Valor do limite inferior deve ser um número. Use ',' para decimais: 1,5"
+        }
+
+        // Check if the current value is less than 1
+        if (currentValue <= 0) {
+          // If less than 1, set the value to 1
+          this.value = 1;
+          document.getElementById("form_info").textContent = "Valor do limite inferior deve ser um número maior que 0"
+        }
+
+      });
 
 
     document.getElementById('timeSelecao').addEventListener('change', function () {

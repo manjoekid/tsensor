@@ -2,6 +2,7 @@ import serial
 import time
 import csv
 import os
+import ast
 import numpy as np
 from shared_memory_dict import SharedMemoryDict
 from pyModbusTCP.client import ModbusClient
@@ -25,9 +26,20 @@ try:
     CONST_READ_DELAY = 60
     CONST_READ_TIME = 1000
 
-    upper_limit = float(os.getenv('upper_limit',default='7.0')) # limite superior de temperatura. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º acima da média
-    lower_limit = float(os.getenv('lower_limit',default='7.0'))  # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+    env_line = os.getenv("upper_limit")
+    # Convert the string representation of list to a Python list
+    float_list = ast.literal_eval(env_line)
+    # Convert the integers to floats
+    upper_limit = [float(x) for x in float_list]     # limite superior de temperatura. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º acima da média
+
+    env_line = os.getenv("lower_limit")
+    # Convert the string representation of list to a Python list
+    float_list = ast.literal_eval(env_line)
+    # Convert the integers to floats
+    lower_limit = [float(x) for x in float_list]     # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+
     consecutive_limit = int(os.getenv('consecutive_limit',default='7'))     # limite de medidas acima da temperatura para acionar alarme. Por exemplo se limite é 5, o alarme vai acionar quando for realizada a 6 leitura consecutiva acima ou abaixo do limite
+    general_limit = (os.getenv('general_limit',default='True')=='True')
 
     modo = os.getenv('modo',default='auto')
     alarm_on = (os.getenv('alarm_on',default='True')=='True')
@@ -60,7 +72,8 @@ csv_header_temp = ['Timestamp', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4'
                            , 'Sensor 25', 'Sensor 26', 'Sensor 27', 'Sensor 28'
                            , 'Sensor 29', 'Sensor 30', 'Sensor 31', 'Sensor 32'
                            ,'Estado Alarme','Estado GA','Modo de Operação']
-
+csv_file_path_log = f'./output/output_log_{current_datetime}.csv'
+csv_header_log = ['Timestamp', 'Tipo', 'Mensagem']
 
 
 
@@ -76,6 +89,7 @@ tsensor_pipe["estado"] = alarm_on
 tsensor_pipe["estado_ga"] = False
 tsensor_pipe["limite_superior"] = upper_limit
 tsensor_pipe["limite_inferior"] = lower_limit
+tsensor_pipe["general_limit"] = general_limit
 tsensor_pipe["limite_consecutivo"] = consecutive_limit
 tsensor_pipe["modo"] = modo
 tsensor_pipe["media"] = average_temp
@@ -85,18 +99,16 @@ tsensor_pipe["temperature_min"] = temp_max_array.tolist()
 
 
 
-
+#save_alarm_to_csv(i*2,upper_limit,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
 def save_alarm_to_csv(sensor,temp_limite,limite,temperatura,acionamento,contagem):
     global csv_file_path_alarm
     global current_hour_alarm
     global csv_file_alarm
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
-    with open(csv_file_path_temp, mode='a', newline='') as csv_file_temp:
-            csv_writer_temp = csv.writer(csv_file_temp)
-            csv_writer_temp.writerow([timestamp, "Alarme", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
-                                               , "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
-                                               ,sensor,temp_limite, limite,temperatura,acionamento,contagem])
+    with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
+            csv_writer_temp = csv.writer(csv_file_log)
+            csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+sensor+" com temperatura limite de "+temp_limite, limite,temperatura,acionamento,contagem])
 
 
 def turn_off_alarm():
@@ -215,7 +227,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
@@ -234,6 +246,10 @@ def check_update_from_interface():
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
         consecutive_limit = tsensor_pipe["limite_consecutivo"]
         set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   #salva estado do alarme no '.env'
+
+    if tsensor_pipe["general_limit"] != general_limit :
+        general_limit = tsensor_pipe["general_limit"]
+        set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
 
 
 def reiniciar_haste(timeOff,timeOn):
@@ -306,7 +322,7 @@ try:
             with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
                 csv_writer_temp = csv.writer(csv_file_temp)
                 csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
-        
+
         # Check if the hour has changed
 
         if time.localtime().tm_hour != current_hour:
@@ -357,18 +373,23 @@ try:
             #time.sleep(5)
 
 
-            upper_limit = average_temp + upper_limit
-            lower_limit = average_temp - lower_limit
 
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
+
+                
 
                 ####################################################################
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
+
+                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[i*2]) 
+                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[i*2]) 
+
+
                 temp_array[i*2] = int(data_received[4:8],16)/100
                 temp_shm[i*2] = int(data_received[4:8],16)/100
                 ### verifica se ultrapassou limite superior
-                if temp_array[i*2] > upper_limit :
+                if temp_array[i*2] > upper_limit_total :
                     alarm_up_array[i*2] += 1
                     if alarm_up_array[i*2] > consecutive_limit :
                         turn_on_alarm()
@@ -383,7 +404,7 @@ try:
                     alarm_up_array[i*2] = 0
 
                 ### verifica se ultrapassou limite inferior
-                if temp_array[i*2] < lower_limit :
+                if temp_array[i*2] < lower_limit_total :
                     alarm_down_array[i*2] += 1
                     if alarm_down_array[i*2] > consecutive_limit :
                         turn_on_alarm()
@@ -400,10 +421,15 @@ try:
                 ####################################################################
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
+
+                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[(i*2)+1]) 
+                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[(i*2)+1]) 
+
+
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
                 temp_shm[(i*2)+1] = int(data_received[8:12],16)/100
                 ### verifica se ultrapassou limite superior
-                if temp_array[(i*2)+1] > upper_limit :
+                if temp_array[(i*2)+1] > upper_limit_total :
                     alarm_up_array[(i*2)+1] += 1
                     if alarm_up_array[(i*2)+1] > consecutive_limit :
                         turn_on_alarm()
@@ -417,7 +443,7 @@ try:
                     alarm_up_array[(i*2)+1] = 0
 
                 ### verifica se ultrapassou limite inferior
-                if temp_array[(i*2)+1] < lower_limit :
+                if temp_array[(i*2)+1] < lower_limit_total :
                     alarm_down_array[(i*2)+1] += 1
                     if alarm_down_array[(i*2)+1] > consecutive_limit :
                         turn_on_alarm()
