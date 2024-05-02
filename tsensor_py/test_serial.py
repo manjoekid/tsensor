@@ -444,12 +444,12 @@ try:
         else :
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
-        if reboot_sensor_count > 600:
-            if read_count != 32:
+        if read_count != 32:
+            if reboot_sensor_count > 600:
                 reiniciar_haste(2,3)
                 reboot_sensor_count = 0
-        else:
-          reboot_sensor_count+=1
+            else:
+               reboot_sensor_count+=1
 
         frame_finish = round((time.time() * 1000 ) - frame_start)
         print(f"Total processing time: {frame_finish}ms")
