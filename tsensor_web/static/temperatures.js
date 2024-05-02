@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                atualizarGrafico(data.temperaturas,data.media);
+                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time);
                 atualizarModo(data.modo);
                 atualizarEstado(data.estado,data.estado_ga);
             })
@@ -53,16 +53,18 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                            atualizaDadosGrafico(data.temperaturas,data.media);
+                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time);
                             atualizarModo(data.modo);
                             atualizarEstado(data.estado,data.estado_ga);
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
     // Função para atualizar o gráfico com os novos dados
-    function atualizarGrafico(temperaturas,media) {
+    function atualizarGrafico(temperaturas,media,upper,lower,time) {
         var ctx = document.getElementById('temperatureChart').getContext('2d');
-        
+        configData.upper[0] = upper;
+        configData.lower[0] = lower;
+        configData.time[0] = time;
         tempChart = new Chart(ctx, {
             data: {
                 labels: Array.from({length: temperaturas.max.length}, (_, i) => i + 1),
@@ -127,8 +129,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function atualizaDadosGrafico(temperaturas,media)
+    function atualizaDadosGrafico(temperaturas,media,upper,lower,time)
     {
+        configData.upper[0] = upper;
+        configData.lower[0] = lower;
+        configData.time[0] = time;
         var newFloatArray = temperaturas.real; // Generating random float array
         newFloatArray.push(media);
         newFloatArray.push(media+configData.upper[0]);
