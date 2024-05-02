@@ -58,7 +58,7 @@
                 <button class="btn btn-danger rounded-pill px-3" type="button" id="botao_estado_alarme">Danger</button>
                 <label for="modoSelecao" class="form-label">Estado GA:</label>
                 <button class="btn btn-danger rounded-pill px-3" type="button" id="botao_estado_ga">Danger</button>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target=".bd-modal-lg">Configurar</button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target=".bd-modal-lg" id="botao_modal">Configurar</button>
             </div>
         </div>
     </div>
@@ -100,12 +100,15 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLongTitle">Configuração Parâmetros</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
             <form id="config_form">
+                <label for="time">Tempo Geral:</label>
+                <input type="number" id="time" name="time" required>
+                <br><br>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1" checked>
                     <label class="form-check-label" for="inlineRadio1">Controle Geral</label>
@@ -114,8 +117,7 @@
                     <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
                     <label class="form-check-label" for="inlineRadio2">Controle Individual</label>
                   </div>
-                  <br>
-                <select id="sensor_select" name="Sensor select" required >
+                <select id="sensor_select" name="Sensor select" disabled >
                     <option value="0">Todos</option>
                     <option value="1">Sensor 01</option>
                     <option value="2">Sensor 02</option>
@@ -150,27 +152,16 @@
                     <option value="31">Sensor 31</option>
                     <option value="32">Sensor 32</option>
                 </select>
-                <br>
+                <br><br>  
                 <label for="upper_temp">Temperatura Superior:</label>
                 <input type="number" id="upper_temp" name="upper_temp" required>
-                <br>
+                <br><br>
                 <label for="lower_temp">Temperatura Inferior:</label>
                 <input type="number" id="lower_temp" name="lower_temp" required>
                 <br>
-                <label for="base_type">Base Análise:</label>
-                <select id="base_type" name="base_type" disabled>
-                    <option value="total_average">Média Geral</option>
-                    <option value="fixed">Fixa</option>
-                    <option value="single_average">Média do sensor</option>
-                    <option value="other">Sensor referência</option>
-                </select>
-                <input type="number" id="base_value" name="base_value" disabled>
                 <br>
-                <br>
-                <label for="time">Tempo:</label>
-                <input type="number" id="time" name="time" required>
-                <br><br>
             </form>
+            <label id="form_info"></label>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
