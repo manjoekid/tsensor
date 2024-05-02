@@ -91,10 +91,13 @@ def alterar_config():
     upper_temp = request.json.get('upper')
     lower_temp = request.json.get('lower')
     time = request.json.get('time')
-    tsensor_pipe["limite_superior"] = upper_temp[0]
-    tsensor_pipe["limite_inferior"] = lower_temp[0]
-    tsensor_pipe["limite_consecutivo"] = time[0]
+    general_limit = request.json.get('controlGeral')
     
+    tsensor_pipe["limite_superior"] = upper_temp
+    tsensor_pipe["limite_inferior"] = lower_temp
+    tsensor_pipe["limite_consecutivo"] = time
+    tsensor_pipe["general_limit"] = general_limit
+
     return jsonify({'message': 'Config alterada'})
 
 @app.route('/searchFiles', methods=['POST'])

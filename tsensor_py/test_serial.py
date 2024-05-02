@@ -2,6 +2,7 @@ import serial
 import time
 import csv
 import os
+import ast
 import numpy as np
 from shared_memory_dict import SharedMemoryDict
 from pyModbusTCP.client import ModbusClient
@@ -25,9 +26,20 @@ try:
     CONST_READ_DELAY = 60
     CONST_READ_TIME = 1000
 
-    upper_limit = float(os.getenv('upper_limit',default='7.0')) # limite superior de temperatura. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º acima da média
-    lower_limit = float(os.getenv('lower_limit',default='7.0'))  # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+    env_line = os.getenv("upper_limit")
+    # Convert the string representation of list to a Python list
+    float_list = ast.literal_eval(env_line)
+    # Convert the integers to floats
+    upper_limit = [float(x) for x in float_list]     # limite superior de temperatura. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º acima da média
+
+    env_line = os.getenv("lower_limit")
+    # Convert the string representation of list to a Python list
+    float_list = ast.literal_eval(env_line)
+    # Convert the integers to floats
+    lower_limit = [float(x) for x in float_list]     # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+
     consecutive_limit = int(os.getenv('consecutive_limit',default='7'))     # limite de medidas acima da temperatura para acionar alarme. Por exemplo se limite é 5, o alarme vai acionar quando for realizada a 6 leitura consecutiva acima ou abaixo do limite
+    general_limit = (os.getenv('general_limit',default='True')=='True')
 
     modo = os.getenv('modo',default='auto')
     alarm_on = (os.getenv('alarm_on',default='True')=='True')
@@ -76,6 +88,7 @@ tsensor_pipe["estado"] = alarm_on
 tsensor_pipe["estado_ga"] = False
 tsensor_pipe["limite_superior"] = upper_limit
 tsensor_pipe["limite_inferior"] = lower_limit
+tsensor_pipe["general_limit"] = general_limit
 tsensor_pipe["limite_consecutivo"] = consecutive_limit
 tsensor_pipe["modo"] = modo
 tsensor_pipe["media"] = average_temp
@@ -215,7 +228,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
@@ -234,6 +247,10 @@ def check_update_from_interface():
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
         consecutive_limit = tsensor_pipe["limite_consecutivo"]
         set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   #salva estado do alarme no '.env'
+
+    if tsensor_pipe["general_limit"] != general_limit :
+        general_limit = tsensor_pipe["general_limit"]
+        set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
 
 
 def reiniciar_haste():
@@ -356,14 +373,19 @@ try:
             #time.sleep(5)
 
 
-            upper_limit_total = average_temp + upper_limit
-            lower_limit_total = average_temp - lower_limit
 
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
+
+                
 
                 ####################################################################
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
+
+                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[i*2]) 
+                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[i*2]) 
+
+
                 temp_array[i*2] = int(data_received[4:8],16)/100
                 temp_shm[i*2] = int(data_received[4:8],16)/100
                 ### verifica se ultrapassou limite superior
@@ -399,6 +421,11 @@ try:
                 ####################################################################
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
+
+                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[(i*2)+1]) 
+                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[(i*2)+1]) 
+
+
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
                 temp_shm[(i*2)+1] = int(data_received[8:12],16)/100
                 ### verifica se ultrapassou limite superior
