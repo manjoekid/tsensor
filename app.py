@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from shared_memory_dict import SharedMemoryDict
+import threading
 import os
 import datetime
 import csv
-
+import tsensor_read as tsensor
 
 
 app = Flask(__name__,
@@ -80,18 +81,6 @@ def alterar_modo():
     else:
         return jsonify({'error': 'Modo inválido'}), 400
 
-
-@app.route('/alterar_config', methods=['POST'])
-def alterar_config():
-    upper_temp = request.json.get('upper')
-    lower_temp = request.json.get('lower')
-    time = request.json.get('time')
-    tsensor_pipe["limite_superior"] = upper_temp[0]
-    tsensor_pipe["limite_inferior"] = lower_temp[0]
-    tsensor_pipe["limite_consecutivo"] = time[0]
-    
-    return jsonify({'message': 'Config alterada'})
-
 @app.route('/searchFiles', methods=['POST'])
 def search_files():
     start = request.json.get('startTime')
@@ -163,5 +152,7 @@ def teste():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
+    #Start sensor reading in another thread
+    thread = threading.Thread(target=tsensor.start_sensor)
+    thread.start()
 

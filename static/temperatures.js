@@ -17,23 +17,30 @@ class CircularBuffer {
     }
   }
   
-var configData = {
-controlGeral: true, // Geral (true) ou individual (false)
-upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 0 é o valor geral
-lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
-                                                            // base é 'a' média geral, 'f' fixo, 'm' média individual, 's' sensor de referência
-base :  ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a'],
-baseValue : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-time : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7]
-};
+  var configData = {
+    controlGeral: true, // Geral (true) ou individual (false)
+    upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 0 é o valor geral
+    lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
+                                                              // base é 'a' média geral, 'f' fixo, 'm' média individual, 's' sensor de referência
+    base :  ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a'],
+    baseValue : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    time : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7]
+  };
 
 
 document.addEventListener('DOMContentLoaded', function () {
 
+
+    // Example usage
     const bufferSize = 180;
     const initialValue = 0.0; // initial value for the buffer
     const floatArraySize = 35;
     const circularBuffer = new CircularBuffer(bufferSize, new Array(floatArraySize).fill(initialValue));
+    
+  
+  
+
+
 
     var tempChart
     var timeChart
@@ -92,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }, {
                             type: 'line',
                             label: 'Limite Superior de Temperatura',
-                            data: Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[0]),
+                            data: Array.from({length: temperaturas.real.length}, (_, i) => media+7),
                         },
                         {
                             type: 'line',
@@ -102,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {
                             type: 'line',
                             label: 'Limite Inferior de Temperatura',
-                            data: Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[0]),
+                            data: Array.from({length: temperaturas.real.length}, (_, i) => media-7),
                         }],
                     },
             
@@ -131,8 +138,8 @@ document.addEventListener('DOMContentLoaded', function () {
     {
         var newFloatArray = temperaturas.real; // Generating random float array
         newFloatArray.push(media);
-        newFloatArray.push(media+configData.upper[0]);
-        newFloatArray.push(media-configData.lower[0]);
+        newFloatArray.push(media+7);
+        newFloatArray.push(media-7);
         circularBuffer.add(newFloatArray);
 
         var timestamp = new Date().toLocaleTimeString();
@@ -167,9 +174,9 @@ document.addEventListener('DOMContentLoaded', function () {
             tempChart.hide(2);
             //tempChart.data.datasets[2].data = Array.from({length: temperaturas.max.length}, (_, i) => 0)
         }
-        tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[0])
+        tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+7)
         tempChart.data.datasets[4].data = Array.from({length: temperaturas.real.length}, (_, i) => media)
-        tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[0])
+        tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-7)
 
         tempChart.update(); 
     }
@@ -230,36 +237,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => console.log('Config alterada:', data))
         .catch(error => console.error('Erro ao alterar configuração:', error));
     }
-
-
-    document.getElementById("button_config").addEventListener("click", function(){
-        // Get form values
-        configData.controlGeral = document.getElementsByName("inlineRadioOptions")[0].checked;
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        var upper = document.getElementById("upper_temp").value;
-        var lower = document.getElementById("lower_temp").value;
-        var time = document.getElementById("time").value;
-        // Perform validation or other operations as needed
-        if(upper.trim() === "" || lower.trim() === "" || time.trim() === "") {
-          alert("Por favor preencha todos os campos.");
-          return; // Prevent further execution
-        }
-    
-        // If validation passes, proceed with form submission
-        // For example, you can submit the form using AJAX or redirect to another page
-        // Here, we'll just log the values to the console
-        
-        configData.upper[sensor_selected] = parseInt(upper);
-        configData.lower[sensor_selected] = parseInt(lower);
-        configData.time[sensor_selected] = parseInt(time);
-
-        enviaConfig();
-
-      });
-
-
-
-
 
 
     document.getElementById('timeSelecao').addEventListener('change', function () {

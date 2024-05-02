@@ -1,0 +1,16 @@
+[Unit]
+Description=TSensor Python Reader
+After=network.target
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+User=root
+WorkingDirectory=/home/tsensor/tsensor/tsensor_py
+ExecStart=/home/tsensor/tsensor/tsensor_py/tsensor_py_service.sh start
+ExecStop=/home/tsensor/tsensor/tsensor_py/tsensor_py_service.sh stop
+ExecReload=/home/tsensor/tsensor/tsensor_py/tsensor_py_service.sh restart
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
