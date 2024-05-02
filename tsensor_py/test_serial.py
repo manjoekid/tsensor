@@ -72,7 +72,8 @@ csv_header_temp = ['Timestamp', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4'
                            , 'Sensor 25', 'Sensor 26', 'Sensor 27', 'Sensor 28'
                            , 'Sensor 29', 'Sensor 30', 'Sensor 31', 'Sensor 32'
                            ,'Estado Alarme','Estado GA','Modo de Operação']
-
+csv_file_path_log = f'./output/output_log_{current_datetime}.csv'
+csv_header_log = ['Timestamp', 'Tipo', 'Mensagem']
 
 
 
@@ -98,18 +99,16 @@ tsensor_pipe["temperature_min"] = temp_max_array.tolist()
 
 
 
-
+#save_alarm_to_csv(i*2,upper_limit,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
 def save_alarm_to_csv(sensor,temp_limite,limite,temperatura,acionamento,contagem):
     global csv_file_path_alarm
     global current_hour_alarm
     global csv_file_alarm
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
-    with open(csv_file_path_temp, mode='a', newline='') as csv_file_temp:
-            csv_writer_temp = csv.writer(csv_file_temp)
-            csv_writer_temp.writerow([timestamp, "Alarme", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
-                                               , "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
-                                               ,sensor,temp_limite, limite,temperatura,acionamento,contagem])
+    with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
+            csv_writer_temp = csv.writer(csv_file_log)
+            csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+sensor+" com temperatura limite de "+temp_limite, limite,temperatura,acionamento,contagem])
 
 
 def turn_off_alarm():
@@ -322,7 +321,7 @@ try:
             with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
                 csv_writer_temp = csv.writer(csv_file_temp)
                 csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
-        
+
         # Check if the hour has changed
 
         if time.localtime().tm_hour != current_hour:
