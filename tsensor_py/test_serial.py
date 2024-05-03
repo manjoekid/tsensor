@@ -403,8 +403,8 @@ try:
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[i*2]) 
-                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[i*2]) 
+                upper_limit_total = (average_temp + (upper_limit[0] if general_limit else upper_limit[i*2]) )
+                lower_limit_total = (average_temp - (lower_limit[0] if general_limit else lower_limit[i*2]) )
 
 
                 temp_array[i*2] = int(data_received[4:8],16)/100
@@ -417,9 +417,9 @@ try:
                         
 
                         print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                        save_alarm_to_log(i*2,upper_limit,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
                     else: 
-                        save_alarm_to_log(i*2,upper_limit,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
                         pass
                 else :
                     alarm_up_array[i*2] = 0
@@ -432,9 +432,9 @@ try:
                         
 
                         print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                        save_alarm_to_log(i*2,lower_limit,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
                     else: 
-                        save_alarm_to_log(i*2,lower_limit,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
+                        save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
                         pass
                 else :
                     alarm_down_array[i*2] = 0
@@ -443,8 +443,8 @@ try:
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[(i*2)+1]) 
-                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[(i*2)+1]) 
+                upper_limit_total = (average_temp + (upper_limit[0] if general_limit else upper_limit[(i*2)+1]) )
+                lower_limit_total = (average_temp - (lower_limit[0] if general_limit else lower_limit[(i*2)+1]) )
 
 
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
@@ -456,9 +456,9 @@ try:
                         turn_on_alarm()
 
                         print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                        save_alarm_to_log((i*2)+1,upper_limit,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
                     else: 
-                        save_alarm_to_log((i*2)+1,upper_limit,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
                         pass
                 else :
                     alarm_up_array[(i*2)+1] = 0
@@ -470,9 +470,9 @@ try:
                         turn_on_alarm()
 
                         print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                        save_alarm_to_log((i*2)+1,lower_limit,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
                     else: 
-                        save_alarm_to_log((i*2)+1,lower_limit,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
+                        save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
                         pass
 
                 else :
