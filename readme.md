@@ -130,3 +130,8 @@ usar variáveis de ambiente para receber os parametros de inicialização do sis
 escrever script de instalação
 avaliar uso do docker
 
+to do
+alterar limites apresentados na tela dependendo do selecionado no configurador
+enviar log junto com csv
+criar bash script para atualizar código
+verificar circularBuffer temperatures.js linha 135

@@ -107,7 +107,7 @@ def save_alarm_to_log(sensor,temp_limite,limite,temperatura,acionamento,contagem
 
     with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
             csv_writer_temp = csv.writer(csv_file_log)
-            csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+str(sensor)+" com limite "+limite+" de "+str(temp_limite)+"ºC e temperatura de "+str(temperatura)+"ºC . Acionou alarme? "+acionamento+" com contagem de "+str(contagem)])
+            csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+str(sensor+1)+" com limite "+limite+" de "+str(temp_limite)+"ºC e temperatura de "+str(temperatura)+"ºC . Acionou alarme? "+acionamento+" com contagem de "+str(contagem)])
 
 def save_change_to_log(tipo,mensagem):
     global csv_file_path_log
@@ -154,14 +154,12 @@ def turn_on_alarm():
 
             data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
 
-
             print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
-            save_change_to_log("Modbus","Ligando Alarme, Modbus retornou "+str(data_received_mod))
+            save_change_to_log("Modbus","Ligando Alarme, Modbus "+("resposta OK!" if data_received_mod else "aparentemente desligado, sem resposta"))
 
             print(f"Data received from Modbus: {data_received_mod}")
-            alarm_on = True
-            tsensor_pipe["estado"] = True
-
+            check_Alarm()
+    
             set_key(find_dotenv(), 'alarm_on', 'True')   #salva estado do alarme no '.env'
 
             return
@@ -180,11 +178,10 @@ def turn_on_alarm():
 
 
         print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
-        save_change_to_log("Modbus","Ligando Alarme, Modbus retornou "+str(data_received_mod))
+        save_change_to_log("Modbus","Ligando Alarme, Modbus "+("resposta OK!" if data_received_mod else "aparentemente desligado, sem resposta"))
 
         print(f"Data received from Modbus: {data_received_mod}")
-        alarm_on = True
-        tsensor_pipe["estado"] = True
+        check_Alarm()
         set_key(find_dotenv(), 'alarm_on', 'True')   #salva estado do alarme no '.env'
         return
 
@@ -260,7 +257,7 @@ def check_update_from_interface():
     if tsensor_pipe["general_limit"] != general_limit :
         general_limit = tsensor_pipe["general_limit"]
         set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ "Geral" if general_limit else "Individual")
+        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual"))
 
 def reiniciar_haste(timeOff,timeOn):
     
@@ -388,7 +385,7 @@ try:
             data_received = ser_sensor.read(12).hex()
             # data_received = ser_sensor.read_until(expected=b"\xFF", size=12) #.strip().hex()
             #data_received = data_received.hex()
-            #data_received = '21650892080a' ### remover linha - uso apenas em testes
+            data_received = '21650892080a' ### remover linha - uso apenas em testes
 
             print(f"[{timestamp}] Data written: {hex_data_to_write} Data received: {data_received}")
             #time.sleep(5)
@@ -403,8 +400,8 @@ try:
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + (upper_limit[0] if general_limit else upper_limit[i*2]) )
-                lower_limit_total = (average_temp - (lower_limit[0] if general_limit else lower_limit[i*2]) )
+                upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[i*2]) )
+                lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[i*2]) )
 
 
                 temp_array[i*2] = int(data_received[4:8],16)/100
@@ -443,8 +440,8 @@ try:
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + (upper_limit[0] if general_limit else upper_limit[(i*2)+1]) )
-                lower_limit_total = (average_temp - (lower_limit[0] if general_limit else lower_limit[(i*2)+1]) )
+                upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[(i*2)+1]) )
+                lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[(i*2)+1]) )
 
 
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
