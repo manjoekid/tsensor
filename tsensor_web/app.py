@@ -107,16 +107,22 @@ def search_files():
     start = request.json.get('startTime')
     stop = request.json.get('stopTime')
     directory_path = '../tsensor_py/output/'  # Update with the path to your directory
-    output_file = '../tsensor_py/output/download.csv'
     files = os.listdir(directory_path)
-    
-    # Filter files based on criteria (e.g., creation time)
+
+    output_file = '../tsensor_py/output/download.csv'
     filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria(file,start,stop)]
-    
     filtered_files = sorted(filtered_files)
     append_csv_files(filtered_files,output_file)
 
-    return jsonify('download.csv')
+
+    output_file = '../tsensor_py/output/logs.csv'
+    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria_log(file,start,stop)]
+    filtered_files = sorted(filtered_files)
+    append_csv_files(filtered_files,output_file)
+
+
+    jsonReturn = jsonify('download.csv','logs.csv')
+    return jsonReturn
 
 def meets_criteria(fileName,start,stop):
 
@@ -133,6 +139,20 @@ def meets_criteria(fileName,start,stop):
         else:
             return False
         
+def meets_criteria_log(fileName,start,stop):
+
+    filePreName = fileName[:11]
+
+    if (filePreName == "output_log_") :
+        file_time = datetime.datetime.strptime(fileName[11:24], "%Y%m%d_%H%M%S")
+        start_time = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M")
+        stop_time = datetime.datetime.strptime(stop, "%Y-%m-%dT%H:%M")
+        
+        if start_time <= file_time <= stop_time:
+            return True
+        else:
+            return False
+
 def append_csv_files(input_files, output_file):
     # Open output file in write mode to clear existing content
     with open(output_file, 'w', newline='') as outfile:
