@@ -385,7 +385,7 @@ try:
             data_received = ser_sensor.read(12).hex()
             # data_received = ser_sensor.read_until(expected=b"\xFF", size=12) #.strip().hex()
             #data_received = data_received.hex()
-            data_received = '21650892080a' ### remover linha - uso apenas em testes
+            #data_received = '21650892080a' ### remover linha - uso apenas em testes
 
             print(f"[{timestamp}] Data written: {hex_data_to_write} Data received: {data_received}")
             #time.sleep(5)
