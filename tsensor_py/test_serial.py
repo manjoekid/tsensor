@@ -403,8 +403,8 @@ try:
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[i*2]) 
-                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[i*2]) 
+                upper_limit_total = (average_temp + (upper_limit[0] if general_limit else upper_limit[i*2]) )
+                lower_limit_total = (average_temp - (lower_limit[0] if general_limit else lower_limit[i*2]) )
 
 
                 temp_array[i*2] = int(data_received[4:8],16)/100
@@ -443,8 +443,8 @@ try:
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + upper_limit[0]) if general_limit else (average_temp - upper_limit[(i*2)+1]) 
-                lower_limit_total = (average_temp - lower_limit[0]) if general_limit else (average_temp - lower_limit[(i*2)+1]) 
+                upper_limit_total = (average_temp + (upper_limit[0] if general_limit else upper_limit[(i*2)+1]) )
+                lower_limit_total = (average_temp - (lower_limit[0] if general_limit else lower_limit[(i*2)+1]) )
 
 
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
