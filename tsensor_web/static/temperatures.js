@@ -468,13 +468,14 @@ document.addEventListener('DOMContentLoaded', function () {
             body: JSON.stringify({ startTime: startTime, stopTime: stopTime })
         })
         .then(response => response.json())
-        .then(file => {
-            var downloadUrl = "/downloadFile/" + file;
+        .then(files => {
+            
     
             // Download filtered files
-            //downloadUrls.forEach(function(url) {
+            files.forEach(function(fileName) {
+                var downloadUrl = "/downloadFile/" + fileName;
                 downloadFile(downloadUrl);
-            //});
+            });
         })
         .catch(error => console.error('Error searching files:', error));
     }
