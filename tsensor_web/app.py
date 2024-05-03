@@ -93,7 +93,7 @@ def alterar_config():
     upper_temp = request.json.get('upper')
     lower_temp = request.json.get('lower')
     time = request.json.get('time')
-    general_limit = request.json.get('controlGeral')
+    general_limit = request.json.get('general_limit')
     
     tsensor_pipe["limite_superior"] = upper_temp
     tsensor_pipe["limite_inferior"] = lower_temp
