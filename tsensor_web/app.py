@@ -63,6 +63,7 @@ def dados_temperatura():
     upper_limit = tsensor_pipe["limite_superior"]
     lower_limit = tsensor_pipe["limite_inferior"]
     time = tsensor_pipe["limite_consecutivo"]
+    general_limit = tsensor_pipe["general_limit"]
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
                                         'min': temperature_min},
@@ -72,7 +73,8 @@ def dados_temperatura():
                         'media':temperature_media,
                         'upper_limit':upper_limit,
                         'lower_limit':lower_limit,
-                        'time':time})
+                        'time':time,
+                        'general_limit':general_limit})
 
     return intermed
 

@@ -18,8 +18,8 @@ class CircularBuffer {
   }
   
 var configData = {
-    controlGeral: true, // Geral (true) ou individual (false)
-    upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 0 é o valor geral
+    general_limit: true, // Geral (true) ou individual (false)
+    upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 32 é o valor geral
     lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
     time : 7
 };
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time);
+                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit);
                 atualizarModo(data.modo);
                 atualizarEstado(data.estado,data.estado_ga);
             })
@@ -50,18 +50,19 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time);
+                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit);
                             atualizarModo(data.modo);
                             atualizarEstado(data.estado,data.estado_ga);
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
     // Função para atualizar o gráfico com os novos dados
-    function atualizarGrafico(temperaturas,media,upper,lower,time) {
+    function atualizarGrafico(temperaturas,media,upper,lower,time,general_limit) {
         var ctx = document.getElementById('temperatureChart').getContext('2d');
         configData.upper = upper;
         configData.lower = lower;
         configData.time = time;
+        configData.general_limit = general_limit;
         tempChart = new Chart(ctx, {
             data: {
                 labels: Array.from({length: temperaturas.max.length}, (_, i) => i + 1),
@@ -91,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }, {
                             type: 'line',
                             label: 'Limite Superior de Temperatura',
-                            data: Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[0]),
+                            data: Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[32]),
                         },
                         {
                             type: 'line',
@@ -101,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {
                             type: 'line',
                             label: 'Limite Inferior de Temperatura',
-                            data: Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[0]),
+                            data: Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[32]),
                         }],
                     },
             
@@ -126,15 +127,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function atualizaDadosGrafico(temperaturas,media,upper,lower,time)
+    function atualizaDadosGrafico(temperaturas,media,upper,lower,time,general_limit)
     {
         configData.upper = upper;
         configData.lower = lower;
         configData.time = time;
-        var newFloatArray = temperaturas.real; // Generating random float array
+        configData.general_limit = general_limit
+        var newFloatArray = temperaturas.real.slice(); 
         newFloatArray.push(media);
-        newFloatArray.push(media+configData.upper[0]);
-        newFloatArray.push(media-configData.lower[0]);
+        newFloatArray.push(media+configData.upper[32]);
+        newFloatArray.push(media-configData.lower[32]);
         circularBuffer.add(newFloatArray);
 
         var timestamp = new Date().toLocaleTimeString();
@@ -169,10 +171,14 @@ document.addEventListener('DOMContentLoaded', function () {
             tempChart.hide(2);
             //tempChart.data.datasets[2].data = Array.from({length: temperaturas.max.length}, (_, i) => 0)
         }
-        tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[0])
         tempChart.data.datasets[4].data = Array.from({length: temperaturas.real.length}, (_, i) => media)
-        tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[0])
-
+        if (configData.general_limit){
+            tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[32])
+            tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[32])
+        }else{
+            tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[i])
+            tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[i])
+        }
         tempChart.update(); 
     }
 
@@ -236,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById("button_config").addEventListener("click", function(){
         // Get form values
-        configData.controlGeral = document.getElementsByName("inlineRadioOptions")[0].checked;
+        configData.general_limit = document.getElementsByName("inlineRadioOptions")[0].checked;
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
         var upper = document.getElementById("upper_temp").value;
         var lower = document.getElementById("lower_temp").value;
@@ -262,10 +268,10 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById("botao_modal").addEventListener("click", function(){
         // Get form values
         document.getElementById("time").value = configData.time;
-        document.getElementById("upper_temp").value = configData.upper[0];
-        document.getElementById("lower_temp").value = configData.lower[0];
-        document.getElementById("sensor_select").value = "0"
-        if (configData.controlGeral){
+        document.getElementById("upper_temp").value = configData.upper[32];
+        document.getElementById("lower_temp").value = configData.lower[32];
+        document.getElementById("sensor_select").value = "32"
+        if (configData.general_limit){
             document.getElementById("sensor_select").disabled = true;
         }else{
             document.getElementById("sensor_select").disabled = false;
@@ -275,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('inlineRadio1').addEventListener('change', function () {
         if (document.getElementsByName("inlineRadioOptions")[0].checked){
             document.getElementById("sensor_select").disabled = true;
-            document.getElementById("sensor_select").value = "0"
+            document.getElementById("sensor_select").value = "32"
         }else{
             document.getElementById("sensor_select").disabled = false;
         }
@@ -288,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('inlineRadio2').addEventListener('change', function () {
         if (document.getElementsByName("inlineRadioOptions")[0].checked){
             document.getElementById("sensor_select").disabled = true;
-            document.getElementById("sensor_select").value = "0"
+            document.getElementById("sensor_select").value = "32"
         }else{
             document.getElementById("sensor_select").disabled = false;
         }
