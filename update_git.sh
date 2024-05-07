@@ -26,16 +26,6 @@ update_git() {
     echo "Buscando variáveis de ambiente..."
     sudo cp /home/tsensor/.env_saved /home/tsensor/tsensor/tsensor_py/.env
 
-    echo "Changing permissions for the tsensor service..."
-    chmod +x tsensor_py_service.sh || echo "Failed to change permissions."
-
-    sudo chown -R root:www-data /home/tsensor/tsensor/tsensor_py/ || echo "Failed to change permissions."
-    sudo chmod -R 775 /home/tsensor/tsensor/tsensor_py/ || echo "Failed to change permissions."
-
-    sudo chown -R root:www-data /home/tsensor/tsensor/tsensor_web/   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
-    sudo chmod -R 775 /home/tsensor/tsensor/tsensor_web/   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
-
-
 }
 
 reinstall_all(){
