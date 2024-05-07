@@ -29,6 +29,7 @@ echo "Virtual environment deactivated successfully."
 
 echo "Changing permissions for the tsensor service..."
 chmod +x tsensor_py_service.sh || echo "Failed to change permissions."
+sudo cp /home/tsensor/tsensor/.env_linux /home/tsensor/tsensor/tsensor_py/.env
 
 sudo chown -R root:www-data /home/tsensor/tsensor/tsensor_py/ || echo "Failed to change permissions."
 sudo chmod -R 775 /home/tsensor/tsensor/tsensor_py/ || echo "Failed to change permissions."
