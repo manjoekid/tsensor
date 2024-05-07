@@ -135,3 +135,4 @@ alterar limites apresentados na tela dependendo do selecionado no configurador
 enviar log junto com csv
 criar bash script para atualizar código
 verificar circularBuffer temperatures.js linha 135
+corrigir inicio do log de erros, média zerada
