@@ -15,6 +15,9 @@ update_git() {
     echo "Reseting local repository..."
     sudo git reset || { echo "Erro: Não conseguiu resetar o repositório local."; exit 1; }
 
+    sudo git stash push --include-untracked || { echo "Erro: Não conseguiu resetar o repositório local."; exit 1; }
+    sudo git stash drop || { echo "Erro: Não conseguiu resetar o repositório local."; exit 1; }
+
     # Download repository files
     echo "Pulling repository from GitHub..."
     sudo git pull || { echo "Erro: Não conseguiu dar o pull no repositório do Github."; exit 1; }
