@@ -33,7 +33,7 @@ run_script() {
 echo "Installing Git..."
 sudo apt install git || { echo "Error: cannot install git."; exit 1; }
 download_files
-run_script
-
 cp ./update_git.sh /home/tsensor/update_git.sh
 chmod +x /home/tsensor/update_git.sh
+run_script
+
