@@ -308,7 +308,7 @@ def inicializa_haste():
         else:
             print("Haste inicializada")
             save_change_to_log("Info","Haste inicializada com todos os controladores OK.")
-            average_temp = np.sum(avg_init)/16
+            average_temp = np.sum(avg_init)/32
             return
     print("Haste inicializada porém com sensores faltando.")
     save_change_to_log("Info","Haste inicializada com sensores faltando.")
