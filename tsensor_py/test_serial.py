@@ -279,6 +279,8 @@ def reiniciar_haste(timeOff,timeOn):
     return
 
 def inicializa_haste():
+    global average_temp
+    avg_init = np.zeros(32, dtype='float32')
     for x in range(10):
         read_count = 0
         for i in range(16):
@@ -294,6 +296,9 @@ def inicializa_haste():
             #data_received = '21650892080a' ### remover linha - uso apenas em testes
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
                 read_count += 1
+                avg_init[i*2] = int(data_received[4:8],16)/100
+                avg_init[(i*2)+1] = int(data_received[8:12],16)/100
+
             time.sleep(0.1)
 
         if read_count != 16 :
@@ -303,10 +308,15 @@ def inicializa_haste():
         else:
             print("Haste inicializada")
             save_change_to_log("Info","Haste inicializada com todos os controladores OK.")
+            average_temp = np.sum(avg_init)/32
             return
     print("Haste inicializada porém com sensores faltando.")
     save_change_to_log("Info","Haste inicializada com sensores faltando.")
-
+    if read_count != 0 :
+        average_temp = np.sum(avg_init)/read_count
+    else :
+        average_temp = 0.0
+    return
 
 try:
     
