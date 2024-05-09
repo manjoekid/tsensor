@@ -32,6 +32,9 @@ reinstall_all(){
     echo "Changing directory to tsensor_py..."
     cd tsensor_py || { echo "Failed to change directory. Exiting."; exit 1; }
     echo "Directory changed successfully."
+    echo "Changing permissions for the tsensor py..."
+    sudo chown -R tsensor:tsensor /home/tsensor/tsensor/tsensor_py/ || echo "Failed to change permissions."
+
     echo "Installing necessary packages..."
     sudo apt install -y python3-venv python3-pip || { echo "Failed to install packages. Exiting."; exit 1; }
     echo "Packages installed successfully."
@@ -57,7 +60,8 @@ reinstall_all(){
 
     echo "Tsensor finished. Starting web server installation..."
     cd /home/tsensor/tsensor/tsensor_web || { echo "Failed to change directory. Exiting."; exit 1; }
-
+    echo "Changing permissions for the tsensor web..."
+    sudo chown -R tsensor:tsensor /home/tsensor/tsensor/tsensor_web/   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
     echo "Installing necessary packages..."
     sudo apt install -y python3-venv python3-pip || { echo "Failed to install packages. Exiting."; exit 1; }
     sudo apt-get install nginx -y
