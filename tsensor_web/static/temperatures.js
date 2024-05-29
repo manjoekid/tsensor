@@ -32,8 +32,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const floatArraySize = 35;
     const circularBuffer = new CircularBuffer(bufferSize, new Array(floatArraySize).fill(initialValue));
 
-    var tempChart
-    var timeChart
+    var tempChart;
+    var timeChart;
     // Função para obter dados de temperatura via AJAX
     function obterDadosTemperatura() {
         fetch('/dados_temperatura')
