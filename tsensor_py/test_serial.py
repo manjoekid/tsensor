@@ -537,13 +537,22 @@ try:
         tsensor_pipe["temperature_min"] = temp_min_array.tolist()
         tsensor_pipe["estado"] = alarm_on
 
+        ####################################################################
+        ###### cálculo da média de temperatura #############################
+        ####################################################################
 
+        sensor_to_ignore = 0                        # coloque aqui o número do sensor que deve ser ignorado da média
+        ignore_temp = temp_array[sensor_to_ignore]
+        temp_array[0] = 0
         read_count = np.count_nonzero(temp_array)
         if read_count != 0 :
             average_temp = np.sum(temp_array)/read_count
         else :
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
+        temp_array[sensor_to_ignore] = ignore_temp
+
+
 
         if read_count != 32:                #verifica se tem falha na leitura dos sensores
             reboot_sensor_count+=1
