@@ -538,12 +538,20 @@ try:
         tsensor_pipe["estado"] = alarm_on
 
 
+        ####################################################################
+        ##### Cálculo da média de temperaturas #############################
+        ####################################################################
+
         read_count = np.count_nonzero(temp_array)
         if read_count != 0 :
             average_temp = np.sum(temp_array)/read_count
         else :
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
+
+
+
+
 
         if read_count != 32:                #verifica se tem falha na leitura dos sensores
             reboot_sensor_count+=1
@@ -552,6 +560,8 @@ try:
                 reboot_sensor_count = 0
         else:
             reboot_sensor_count = 0        #se estiver OK, zera o contador
+
+
 
         frame_finish = round((time.time() * 1000 ) - frame_start)
         print(f"Total processing time: {frame_finish}ms")
