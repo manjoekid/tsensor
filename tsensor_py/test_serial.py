@@ -41,6 +41,15 @@ try:
     consecutive_limit = int(os.getenv('consecutive_limit',default='7'))     # limite de medidas acima da temperatura para acionar alarme. Por exemplo se limite é 5, o alarme vai acionar quando for realizada a 6 leitura consecutiva acima ou abaixo do limite
     general_limit = (os.getenv('general_limit',default='True')=='True')
 
+    env_line = os.getenv("enabled_sensor")
+    enabled_sensor = [True for x in range(32)]
+    if env_line == None :
+        set_key(find_dotenv(), 'enabled_sensor', str(enabled_sensor))   #salva estado do alarme no '.env'
+    else :
+        # Convert the string representation of list to a Python list
+        enabled_sensor = ast.literal_eval(env_line)
+    debug_mode = (os.getenv('debug_mode',default='False')=='True')
+
     modo = os.getenv('modo',default='auto')
     alarm_on = (os.getenv('alarm_on',default='True')=='True')
 
@@ -96,6 +105,7 @@ tsensor_pipe["media"] = average_temp
 tsensor_pipe["temperature"] = temp_max_array.tolist()
 tsensor_pipe["temperature_max"] = temp_max_array.tolist()
 tsensor_pipe["temperature_min"] = temp_max_array.tolist()
+tsensor_pipe["enabled_sensor"] = enabled_sensor
 
 
 
@@ -128,8 +138,10 @@ def turn_off_alarm():
 
 
         # Writing data to the TCP port
-
-        data_received_mod = tcp_modbus.write_single_register(500, 0)    #Desliga alarme
+        if debug_mode :
+            data_received_mod = [1]
+        else:
+            data_received_mod = tcp_modbus.write_single_register(500, 0)    #Desliga alarme
         alarm_on = False
         tsensor_pipe["estado"] = False
         
@@ -151,8 +163,10 @@ def turn_on_alarm():
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
             # Writing data to the TCP port
-
-            data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
+            if debug_mode:
+                data_received_mod = True
+            else :
+                data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
 
             print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
             save_change_to_log("Modbus","Ligando Alarme, Modbus "+("resposta OK!" if data_received_mod else "aparentemente desligado, sem resposta"))
@@ -174,8 +188,10 @@ def turn_on_alarm():
 
         # Writing data to the TCP port
 
-        data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
-
+        if debug_mode:
+                data_received_mod = True
+        else :
+            data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
 
         print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
         save_change_to_log("Modbus","Ligando Alarme, Modbus "+("resposta OK!" if data_received_mod else "aparentemente desligado, sem resposta"))
@@ -188,7 +204,11 @@ def turn_on_alarm():
 def check_GA():
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
     # Reading data to the TCP port
-    data_received_mod = tcp_modbus.read_holding_registers(70, 1)
+    if debug_mode:
+                data_received_mod = [1]
+    else :
+        data_received_mod = tcp_modbus.read_holding_registers(70, 1)
+    
 
     print(f"[{timestamp}] Checking if GA is ON - Data written: (70, 1)")
     # Reading data from the RS485 port
@@ -206,7 +226,11 @@ def check_GA():
 def return_alarm_to_state(alarm_saved_state):
     if (alarm_saved_state != check_Alarm()):
         alarm_state = 1 if alarm_saved_state else 0
-        data_received_mod = tcp_modbus.write_single_register(500, alarm_state)    #Liga/desliga alarme
+        if debug_mode:
+                data_received_mod = alarm_state
+        else :
+            data_received_mod = tcp_modbus.write_single_register(500, alarm_state)    #Liga/desliga alarme
+        
         alarm_on = alarm_state
         tsensor_pipe["estado"] = alarm_on
         print(f"Inicializando o alarme conforme dados salvos '.env'. Modbus retornou: {data_received_mod}")
@@ -216,7 +240,12 @@ def check_Alarm():
     global alarm_on
     # Reading data to the TCP port
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
-    data_received_mod = tcp_modbus.read_holding_registers(500, 1)
+
+    if debug_mode:
+        data_received_mod = [1]
+    else :
+        data_received_mod = tcp_modbus.read_holding_registers(500, 1)
+        
 
     print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
     # Reading data from the RS485 port
@@ -233,7 +262,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit,general_limit
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
@@ -258,6 +287,11 @@ def check_update_from_interface():
         general_limit = tsensor_pipe["general_limit"]
         set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
         save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual"))
+    if tsensor_pipe["enabled_sensor"] != enabled_sensor :
+        enabled_sensor = tsensor_pipe["enabled_sensor"]
+        set_key(find_dotenv(), 'enabled_sensor', str(enabled_sensor))   #salva estado do alarme no '.env'
+        save_change_to_log("Info","Lista de sensores habilitados alterada para "+str(enabled_sensor))
+
 
 def reiniciar_haste(timeOff,timeOn):
     
@@ -291,9 +325,17 @@ def inicializa_haste():
             hex_data_to_write = "64" + controller_ID
             data_to_write = bytes.fromhex(hex_data_to_write)
 
-            ser_sensor.write(data_to_write)
-            data_received = ser_sensor.read(12).hex()
-            #data_received = '21650892080a' ### remover linha - uso apenas em testes
+
+            if debug_mode:
+                random_number = np.random.randint(3000, 4001)
+                hex_number = format(random_number, '04x')
+                random_number = np.random.randint(3000, 4001)
+                data_received = '2165' + hex_number + format(random_number, '04x') ### uso apenas em testes - modo debug
+
+            else:
+                ser_sensor.write(data_to_write)
+                data_received = ser_sensor.read(12).hex()
+
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
                 read_count += 1
                 avg_init[i*2] = int(data_received[4:8],16)/100
@@ -387,15 +429,17 @@ try:
             # Convert hex string to bytes
             data_to_write = bytes.fromhex(hex_data_to_write)
 
-            # Writing data to the RS485 port
-            ser_sensor.write(data_to_write)
-            #print(f"[{timestamp}] Data written: {hex_data_to_write}")
+            if debug_mode :
+                random_number = np.random.randint(3000, 4001)
+                hex_number = format(random_number, '04x')
+                random_number = np.random.randint(3000, 4001)
+                data_received = '2165' + hex_number + format(random_number, '04x') ### uso apenas em testes - modo debug
+            else:
+                # Writing data to the RS485 port
+                ser_sensor.write(data_to_write)
+                # Reading data from the RS485 port
+                data_received = ser_sensor.read(12).hex()
 
-            # Reading data from the RS485 port
-            data_received = ser_sensor.read(12).hex()
-            # data_received = ser_sensor.read_until(expected=b"\xFF", size=12) #.strip().hex()
-            #data_received = data_received.hex()
-            #data_received = '21650892080a' ### remover linha - uso apenas em testes
 
             print(f"[{timestamp}] Data written: {hex_data_to_write} Data received: {data_received}")
             #time.sleep(5)
@@ -416,36 +460,40 @@ try:
 
                 temp_array[i*2] = int(data_received[4:8],16)/100
                 temp_shm[i*2] = int(data_received[4:8],16)/100
-                ### verifica se ultrapassou limite superior
-                if temp_array[i*2] > upper_limit_total :
-                    alarm_up_array[i*2] += 1
-                    if alarm_up_array[i*2] > consecutive_limit :
-                        turn_on_alarm()
-                        
+                ### verifica se o sensor está habilitado
+                if enabled_sensor[i*2] :
+                    ### verifica se ultrapassou limite superior
+                    if temp_array[i*2] > upper_limit_total :
+                        alarm_up_array[i*2] += 1
+                        if alarm_up_array[i*2] > consecutive_limit :
+                            turn_on_alarm()
+                            
 
-                        print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                        save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
-                    else: 
-                        save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
-                        pass
-                else :
-                    alarm_up_array[i*2] = 0
+                            print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
+                            save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
+                        else: 
+                            save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
+                            pass
+                    else :   # se temperatura não estiver maior que o limite, zera o contador
+                        alarm_up_array[i*2] = 0
 
-                ### verifica se ultrapassou limite inferior
-                if temp_array[i*2] < lower_limit_total :
-                    alarm_down_array[i*2] += 1
-                    if alarm_down_array[i*2] > consecutive_limit :
-                        turn_on_alarm()
-                        
+                    ### verifica se ultrapassou limite inferior
+                    if temp_array[i*2] < lower_limit_total :
+                        alarm_down_array[i*2] += 1
+                        if alarm_down_array[i*2] > consecutive_limit :
+                            turn_on_alarm()
+                            
 
-                        print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                        save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
-                    else: 
-                        save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
-                        pass
-                else :
-                    alarm_down_array[i*2] = 0
+                            print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
+                            save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
+                        else: 
+                            save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
+                            pass
+                    else :   # se temperatura não estiver menor que o limite, zera o contador
+                        alarm_down_array[i*2] = 0
 
+                else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
+                    temp_shm[i*2] = average_temp
                 ####################################################################
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
@@ -456,34 +504,39 @@ try:
 
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
                 temp_shm[(i*2)+1] = int(data_received[8:12],16)/100
-                ### verifica se ultrapassou limite superior
-                if temp_array[(i*2)+1] > upper_limit_total :
-                    alarm_up_array[(i*2)+1] += 1
-                    if alarm_up_array[(i*2)+1] > consecutive_limit :
-                        turn_on_alarm()
 
-                        print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                        save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
-                    else: 
-                        save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
-                        pass
-                else :
-                    alarm_up_array[(i*2)+1] = 0
+                ### verifica se o sensor está habilitado
+                if enabled_sensor[(i*2)+1]:
+                    ### verifica se ultrapassou limite superior
+                    if temp_array[(i*2)+1] > upper_limit_total :
+                        alarm_up_array[(i*2)+1] += 1
+                        if alarm_up_array[(i*2)+1] > consecutive_limit :
+                            turn_on_alarm()
 
-                ### verifica se ultrapassou limite inferior
-                if temp_array[(i*2)+1] < lower_limit_total :
-                    alarm_down_array[(i*2)+1] += 1
-                    if alarm_down_array[(i*2)+1] > consecutive_limit :
-                        turn_on_alarm()
+                            print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
+                            save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
+                        else: 
+                            save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
+                            pass
+                    else :
+                        alarm_up_array[(i*2)+1] = 0
 
-                        print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                        save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
-                    else: 
-                        save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
-                        pass
+                    ### verifica se ultrapassou limite inferior
+                    if temp_array[(i*2)+1] < lower_limit_total :
+                        alarm_down_array[(i*2)+1] += 1
+                        if alarm_down_array[(i*2)+1] > consecutive_limit :
+                            turn_on_alarm()
 
-                else :
-                    alarm_down_array[(i*2)+1] = 0 
+                            print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
+                            save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
+                        else: 
+                            save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
+                            pass
+
+                    else :
+                        alarm_down_array[(i*2)+1] = 0 
+                else :   # se o sensor não estiver habilitado, salva a temperatura média na lista shm
+                    temp_shm[(i*2)+1] = average_temp
             else:
                 ################### ERRO DE LEITURA ######################
                 temp_shm[i*2] = average_temp
@@ -541,10 +594,13 @@ try:
         ####################################################################
         ##### Cálculo da média de temperaturas #############################
         ####################################################################
+        average_array = np.zeros(32, dtype='float32')
+        for i in range(32):
+            average_array[i] = temp_array[i] if enabled_sensor[i] else 0
 
-        read_count = np.count_nonzero(temp_array)
+        read_count = np.count_nonzero(average_array)   # verifica quantas temperaturas são diferentes de 0
         if read_count != 0 :
-            average_temp = np.sum(temp_array)/read_count
+            average_temp = np.sum(average_array)/read_count
         else :
             average_temp = 0.0
         tsensor_pipe["media"] = average_temp
@@ -555,7 +611,7 @@ try:
 
         if read_count != 32:                #verifica se tem falha na leitura dos sensores
             reboot_sensor_count+=1
-            if reboot_sensor_count > 600:   #se tiver por mais de 10min com sensores faltando, reinicia haste     
+            if reboot_sensor_count > 600:   #se tiver por mais de 10min (600 leituras) com sensores faltando, reinicia haste     
                 reiniciar_haste(2,3)
                 reboot_sensor_count = 0
         else:
