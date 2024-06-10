@@ -48,6 +48,17 @@ try:
     else :
         # Convert the string representation of list to a Python list
         enabled_sensor = ast.literal_eval(env_line)
+
+    env_line = os.getenv("calibracao")
+    float_list = [0.0 for x in range(32)]
+    if env_line == None :
+        set_key(find_dotenv(), 'calibracao', str(float_list))   #salva calibração dos sensores no '.env'
+    else :
+        # Convert the string representation of list to a Python list
+        float_list = ast.literal_eval(env_line)
+    calibracao = [float(x) for x in float_list] 
+
+
     debug_mode = (os.getenv('debug_mode',default='False')=='True')
 
     modo = os.getenv('modo',default='auto')
@@ -98,6 +109,7 @@ tsensor_pipe["estado"] = alarm_on
 tsensor_pipe["estado_ga"] = False
 tsensor_pipe["limite_superior"] = upper_limit
 tsensor_pipe["limite_inferior"] = lower_limit
+tsensor_pipe["calibracao"] = calibracao
 tsensor_pipe["general_limit"] = general_limit
 tsensor_pipe["limite_consecutivo"] = consecutive_limit
 tsensor_pipe["modo"] = modo
@@ -262,7 +274,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
@@ -281,17 +293,20 @@ def check_update_from_interface():
         save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit))
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
         consecutive_limit = tsensor_pipe["limite_consecutivo"]
-        set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   #salva estado do alarme no '.env'
+        set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   
         save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit))
     if tsensor_pipe["general_limit"] != general_limit :
         general_limit = tsensor_pipe["general_limit"]
-        set_key(find_dotenv(), 'general_limit', str(general_limit))   #salva estado do alarme no '.env'
+        set_key(find_dotenv(), 'general_limit', str(general_limit))  
         save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual"))
     if tsensor_pipe["enabled_sensor"] != enabled_sensor :
         enabled_sensor = tsensor_pipe["enabled_sensor"]
-        set_key(find_dotenv(), 'enabled_sensor', str(enabled_sensor))   #salva estado do alarme no '.env'
+        set_key(find_dotenv(), 'enabled_sensor', str(enabled_sensor))  
         save_change_to_log("Info","Lista de sensores habilitados alterada para "+str(enabled_sensor))
-
+    if tsensor_pipe["calibracao"] != calibracao :
+        calibracao = tsensor_pipe["calibracao"]
+        set_key(find_dotenv(), 'calibracao', str(calibracao))  
+        save_change_to_log("Info","Calibração dos sensores alterada para "+str(calibracao))
 
 def reiniciar_haste(timeOff,timeOn):
     
@@ -458,8 +473,14 @@ try:
                 lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[i*2]) )
 
 
+                #########  converte valor recebido da serial em temperatura
                 temp_array[i*2] = int(data_received[4:8],16)/100
                 temp_shm[i*2] = int(data_received[4:8],16)/100
+
+                #########  ajusta valor da temperatura com dados de calibração
+                temp_array[i*2] += calibracao[i*2]
+                temp_shm[i*2] += calibracao[i*2]
+
                 ### verifica se o sensor está habilitado
                 if enabled_sensor[i*2] :
                     ### verifica se ultrapassou limite superior
@@ -501,9 +522,14 @@ try:
                 upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[(i*2)+1]) )
                 lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[(i*2)+1]) )
 
-
+                #########  converte valor recebido da serial em temperatura
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
                 temp_shm[(i*2)+1] = int(data_received[8:12],16)/100
+
+                #########  ajusta valor da temperatura com dados de calibração
+                temp_array[(i*2)+1] += calibracao[(i*2)+1]
+                temp_shm[(i*2)+1] += calibracao[(i*2)+1]
+
 
                 ### verifica se o sensor está habilitado
                 if enabled_sensor[(i*2)+1]:
