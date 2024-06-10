@@ -17,31 +17,39 @@ class CircularBuffer {
     }
   }
   
-var configData = {
-    general_limit: true, // Geral (true) ou individual (false)
-    upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 32 é o valor geral
+  var configData = {
+    controlGeral: true, // Geral (true) ou individual (false)
+    upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 0 é o valor geral
     lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
-    enabled : [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
-               true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-    time : 7
-};
+                                                              // base é 'a' média geral, 'f' fixo, 'm' média individual, 's' sensor de referência
+    base :  ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a'],
+    baseValue : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    time : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7]
+  };
 
 
 document.addEventListener('DOMContentLoaded', function () {
 
+
+    // Example usage
     const bufferSize = 180;
     const initialValue = 0.0; // initial value for the buffer
     const floatArraySize = 35;
     const circularBuffer = new CircularBuffer(bufferSize, new Array(floatArraySize).fill(initialValue));
+    
+  
+  
 
-    var tempChart;
-    var timeChart;
+
+
+    var tempChart
+    var timeChart
     // Função para obter dados de temperatura via AJAX
     function obterDadosTemperatura() {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit,data.enabled_sensor);
+                atualizarGrafico(data.temperaturas,data.media);
                 atualizarModo(data.modo);
                 atualizarEstado(data.estado,data.estado_ga);
             })
@@ -52,20 +60,16 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit,data.enabled_sensor);
+                            atualizaDadosGrafico(data.temperaturas,data.media);
                             atualizarModo(data.modo);
                             atualizarEstado(data.estado,data.estado_ga);
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
     // Função para atualizar o gráfico com os novos dados
-    function atualizarGrafico(temperaturas,media,upper,lower,time,general_limit,enabled_sensor) {
+    function atualizarGrafico(temperaturas,media) {
         var ctx = document.getElementById('temperatureChart').getContext('2d');
-        configData.upper = upper;
-        configData.lower = lower;
-        configData.time = time;
-        configData.general_limit = general_limit;
-        configData.enabled = enabled_sensor;
+        
         tempChart = new Chart(ctx, {
             data: {
                 labels: Array.from({length: temperaturas.max.length}, (_, i) => i + 1),
@@ -95,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }, {
                             type: 'line',
                             label: 'Limite Superior de Temperatura',
-                            data: Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[32]),
+                            data: Array.from({length: temperaturas.real.length}, (_, i) => media+7),
                         },
                         {
                             type: 'line',
@@ -105,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {
                             type: 'line',
                             label: 'Limite Inferior de Temperatura',
-                            data: Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[32]),
+                            data: Array.from({length: temperaturas.real.length}, (_, i) => media-7),
                         }],
                     },
             
@@ -130,18 +134,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function atualizaDadosGrafico(temperaturas,media,upper,lower,time,general_limit,enabled_sensor)
+    function atualizaDadosGrafico(temperaturas,media)
     {
-        configData.upper = upper;
-        configData.lower = lower;
-        configData.time = time;
-        configData.general_limit = general_limit;
-        configData.enabled = enabled_sensor;
-
-        var newFloatArray = temperaturas.real.slice(); 
+        var newFloatArray = temperaturas.real; // Generating random float array
         newFloatArray.push(media);
-        newFloatArray.push(media+configData.upper[32]);
-        newFloatArray.push(media-configData.lower[32]);
+        newFloatArray.push(media+7);
+        newFloatArray.push(media-7);
         circularBuffer.add(newFloatArray);
 
         var timestamp = new Date().toLocaleTimeString();
@@ -176,14 +174,10 @@ document.addEventListener('DOMContentLoaded', function () {
             tempChart.hide(2);
             //tempChart.data.datasets[2].data = Array.from({length: temperaturas.max.length}, (_, i) => 0)
         }
+        tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+7)
         tempChart.data.datasets[4].data = Array.from({length: temperaturas.real.length}, (_, i) => media)
-        if (configData.general_limit){
-            tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[32])
-            tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[32])
-        }else{
-            tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[i])
-            tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[i])
-        }
+        tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-7)
+
         tempChart.update(); 
     }
 
@@ -245,144 +239,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    document.getElementById("button_config").addEventListener("click", function(){
-        // Get form values
-        configData.general_limit = document.getElementsByName("inlineRadioOptions")[0].checked;
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        var upper = document.getElementById("upper_temp").value;
-        var lower = document.getElementById("lower_temp").value;
-        var time = document.getElementById("time").value;
-        // Perform validation or other operations as needed
-        if(upper.trim() === "" || lower.trim() === "" || time.trim() === "") {
-          alert("Por favor preencha todos os campos.");
-          return; // Prevent further execution
-        }
-    
-        // If validation passes, proceed with form submission
-        // For example, you can submit the form using AJAX or redirect to another page
-        // Here, we'll just log the values to the console
-        
-        configData.upper[sensor_selected] = parseFloat(upper);
-        configData.lower[sensor_selected] = parseFloat(lower);
-        configData.time = parseInt(time);
-        if (sensor_selected < 32 ){
-            configData.enabled[sensor_selected] = document.getElementById('sensorCheckbox').checked;
-        }
-
-        enviaConfig();
-
-      });
-
-      document.getElementById("botao_modal").addEventListener("click", function(){
-        // Get form values
-        document.getElementById("time").value = configData.time;
-        document.getElementById("upper_temp").value = configData.upper[32];
-        document.getElementById("lower_temp").value = configData.lower[32];
-        document.getElementById("sensor_select").value = "32"
-        if (configData.general_limit){
-            document.getElementsByName("inlineRadioOptions")[0].checked = true;
-            document.getElementById("sensor_select").disabled = true;
-            document.getElementById("sensorCheckbox").disabled = true;
-        }else{
-            document.getElementsByName("inlineRadioOptions")[1].checked = true;
-            document.getElementById("sensor_select").disabled = false;
-            document.getElementById("sensorCheckbox").disabled = false;
-        }
-    });
-
-      document.getElementById('inlineRadio1').addEventListener('change', function () {
-        if (document.getElementsByName("inlineRadioOptions")[0].checked){
-            document.getElementById("sensor_select").disabled = true;
-            document.getElementById("sensorCheckbox").disabled = true;
-            document.getElementById("sensor_select").value = "32"
-        }else{
-            document.getElementById("sensor_select").disabled = false;
-            document.getElementById("sensorCheckbox").disabled = false;
-        }
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
-        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
-
-      });
-
-      document.getElementById('inlineRadio2').addEventListener('change', function () {
-        if (document.getElementsByName("inlineRadioOptions")[0].checked){
-            document.getElementById("sensor_select").disabled = true;
-            document.getElementById("sensorCheckbox").disabled = true;
-            document.getElementById("sensor_select").value = "32"
-        }else{
-            document.getElementById("sensor_select").disabled = false;
-            document.getElementById("sensorCheckbox").disabled = false;
-        }
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
-        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
-      });
-
-      document.getElementById('sensor_select').addEventListener('change', function () {
-
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
-        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
-        document.getElementById("sensorCheckbox").checked = configData.enabled[sensor_selected];
-
-    });
-
-      document.getElementById('time').addEventListener('input', function () {
-        var currentValue = parseInt(this.value);
-        document.getElementById("form_info").textContent = "";
-        // Check if the current value is less than 1
-        if (currentValue < 1) {
-          // If less than 1, set the value to 1
-          this.value = 1;
-          document.getElementById("form_info").textContent = "Valor do tempo deve ser um número inteiro maior que 1"
-        }else{
-            this.value = currentValue;
-        }
-      });
-
-      document.getElementById('upper_temp').addEventListener('input', function () {
-        var currentValue = parseFloat(this.value);
-        document.getElementById("form_info").textContent = "";
-        if (isNaN(currentValue)){
-            document.getElementById("form_info").textContent = "Valor do limite superior deve ser um número. Use ',' para decimais: 1,5"
-        }
-
-        // Check if the current value is less than 1
-        if (currentValue <= 0) {
-          // If less than 1, set the value to 1
-          this.value = 1;
-          document.getElementById("form_info").textContent = "Valor do limite superior deve ser um número maior que 0"
-        }
-
-      });
-
-      document.getElementById('lower_temp').addEventListener('input', function () {
-        var currentValue = parseFloat(this.value);
-        document.getElementById("form_info").textContent = "";
-        if (isNaN(currentValue)){
-            document.getElementById("form_info").textContent = "Valor do limite inferior deve ser um número. Use ',' para decimais: 1,5"
-        }
-
-        // Check if the current value is less than 1
-        if (currentValue <= 0) {
-          // If less than 1, set the value to 1
-          this.value = 1;
-          document.getElementById("form_info").textContent = "Valor do limite inferior deve ser um número maior que 0"
-        }
-
-      });
-
-
     document.getElementById('timeSelecao').addEventListener('change', function () {
         var novoTime = this.value;
         timeChart.destroy();
         initiateTimeChart(novoTime);
     });
 
-
-    
-    // Function to generate random RGB color values
+        // Function to generate random RGB color values
     function generateRandomColor() {
         return 'rgb(' + Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ')';
     }
@@ -487,14 +350,13 @@ document.addEventListener('DOMContentLoaded', function () {
             body: JSON.stringify({ startTime: startTime, stopTime: stopTime })
         })
         .then(response => response.json())
-        .then(files => {
-            
+        .then(file => {
+            var downloadUrl = "/downloadFile/" + file;
     
             // Download filtered files
-            files.forEach(function(fileName) {
-                var downloadUrl = "/downloadFile/" + fileName;
+            //downloadUrls.forEach(function(url) {
                 downloadFile(downloadUrl);
-            });
+            //});
         })
         .catch(error => console.error('Error searching files:', error));
     }

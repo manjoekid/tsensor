@@ -6,3 +6,4 @@ numpy
 pyModbusTCP
 datetime
 python-dotenv
+pyserial

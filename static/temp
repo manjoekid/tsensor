@@ -1,0 +1,66 @@
+// Function to generate random RGB color values
+function generateRandomColor() {
+    return 'rgb(' + Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ')';
+}
+
+// Function to update the chart with new temperature data
+function updateChart(chart, sensorIndex, newData) {
+    chart.data.datasets[sensorIndex].data.push(newData);
+    chart.update();
+}
+
+// Initialize the chart
+var ctx = document.getElementById('timeChart').getContext('2d');
+var timeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: []
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    }
+});
+
+// Add datasets for 32 sensors
+for (var i = 0; i < 32; i++) {
+    var randomColor = generateRandomColor();
+    timeChart.data.datasets.push({
+        label: 'Sensor ' + (i + 1),
+        borderColor: randomColor,
+        borderWidth: 1,
+        fill: false,
+        data: []
+    });
+}
+
+// Simulate real-time updates
+setInterval(function() {
+    var timestamp = new Date().toLocaleTimeString();
+    for (var i = 0; i < 32; i++) {
+        var newData = generateRandomTemperature();
+        updateChart(timeChart, i, newData);
+    }
+    timeChart.data.labels.push(timestamp);
+    timeChart.update();
+}, 1000); // Update every second
+
+
+
+
+
+
+
+
+
+legend.legendItems[0]
+
+
+
+

@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from shared_memory_dict import SharedMemoryDict
+import threading
 import os
 import datetime
 import csv
-
+import tsensor_read as tsensor
 
 
 app = Flask(__name__,
@@ -60,11 +61,6 @@ def dados_temperatura():
     estado_atual = tsensor_pipe["estado"]
     estado_ga = tsensor_pipe["estado_ga"]
     temperature_media = tsensor_pipe["media"]
-    upper_limit = tsensor_pipe["limite_superior"]
-    lower_limit = tsensor_pipe["limite_inferior"]
-    time = tsensor_pipe["limite_consecutivo"]
-    general_limit = tsensor_pipe["general_limit"]
-    enabled_sensor = tsensor_pipe["enabled_sensor"]
 
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
@@ -72,12 +68,7 @@ def dados_temperatura():
                         'modo': modo_atual,
                         'estado':estado_atual,
                         'estado_ga':estado_ga,
-                        'media':temperature_media,
-                        'upper_limit':upper_limit,
-                        'lower_limit':lower_limit,
-                        'time':time,
-                        'general_limit':general_limit,
-                        'enabled_sensor':enabled_sensor})
+                        'media':temperature_media})
 
     return intermed
 
@@ -90,44 +81,21 @@ def alterar_modo():
     else:
         return jsonify({'error': 'Modo inválido'}), 400
 
-
-@app.route('/alterar_config', methods=['POST'])
-def alterar_config():
-    upper_temp = request.json.get('upper')
-    lower_temp = request.json.get('lower')
-    time = request.json.get('time')
-    general_limit = request.json.get('general_limit')
-    enabled_sensor = request.json.get('enabled')
-    
-    tsensor_pipe["limite_superior"] = upper_temp
-    tsensor_pipe["limite_inferior"] = lower_temp
-    tsensor_pipe["limite_consecutivo"] = time
-    tsensor_pipe["general_limit"] = general_limit
-    tsensor_pipe["enabled_sensor"] = enabled_sensor
-
-    return jsonify({'message': 'Config alterada'})
-
 @app.route('/searchFiles', methods=['POST'])
 def search_files():
     start = request.json.get('startTime')
     stop = request.json.get('stopTime')
     directory_path = '../tsensor_py/output/'  # Update with the path to your directory
-    files = os.listdir(directory_path)
-
     output_file = '../tsensor_py/output/download.csv'
+    files = os.listdir(directory_path)
+    
+    # Filter files based on criteria (e.g., creation time)
     filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria(file,start,stop)]
+    
     filtered_files = sorted(filtered_files)
     append_csv_files(filtered_files,output_file)
 
-
-    output_file = '../tsensor_py/output/logs.csv'
-    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria_log(file,start,stop)]
-    filtered_files = sorted(filtered_files)
-    append_csv_files(filtered_files,output_file)
-
-
-    jsonReturn = jsonify('download.csv','logs.csv')
-    return jsonReturn
+    return jsonify('download.csv')
 
 def meets_criteria(fileName,start,stop):
 
@@ -144,20 +112,6 @@ def meets_criteria(fileName,start,stop):
         else:
             return False
         
-def meets_criteria_log(fileName,start,stop):
-
-    filePreName = fileName[:11]
-
-    if (filePreName == "output_log_") :
-        file_time = datetime.datetime.strptime(fileName[11:24], "%Y%m%d_%H%M%S")
-        start_time = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M")
-        stop_time = datetime.datetime.strptime(stop, "%Y-%m-%dT%H:%M")
-        
-        if start_time <= file_time <= stop_time:
-            return True
-        else:
-            return False
-
 def append_csv_files(input_files, output_file):
     # Open output file in write mode to clear existing content
     with open(output_file, 'w', newline='') as outfile:
@@ -198,5 +152,7 @@ def teste():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
+    #Start sensor reading in another thread
+    thread = threading.Thread(target=tsensor.start_sensor)
+    thread.start()
 
