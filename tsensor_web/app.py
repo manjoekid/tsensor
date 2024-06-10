@@ -64,6 +64,8 @@ def dados_temperatura():
     lower_limit = tsensor_pipe["limite_inferior"]
     time = tsensor_pipe["limite_consecutivo"]
     general_limit = tsensor_pipe["general_limit"]
+    enabled_sensor = tsensor_pipe["enabled_sensor"]
+
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
                                         'min': temperature_min},
@@ -74,7 +76,8 @@ def dados_temperatura():
                         'upper_limit':upper_limit,
                         'lower_limit':lower_limit,
                         'time':time,
-                        'general_limit':general_limit})
+                        'general_limit':general_limit,
+                        'enabled_sensor':enabled_sensor})
 
     return intermed
 
@@ -94,11 +97,13 @@ def alterar_config():
     lower_temp = request.json.get('lower')
     time = request.json.get('time')
     general_limit = request.json.get('general_limit')
+    enabled_sensor = request.json.get('enabled')
     
     tsensor_pipe["limite_superior"] = upper_temp
     tsensor_pipe["limite_inferior"] = lower_temp
     tsensor_pipe["limite_consecutivo"] = time
     tsensor_pipe["general_limit"] = general_limit
+    tsensor_pipe["enabled_sensor"] = enabled_sensor
 
     return jsonify({'message': 'Config alterada'})
 

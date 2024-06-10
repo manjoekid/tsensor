@@ -21,6 +21,8 @@ var configData = {
     general_limit: true, // Geral (true) ou individual (false)
     upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 32 é o valor geral
     lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
+    enabled : [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
+               true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
     time : 7
 };
 
@@ -32,14 +34,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const floatArraySize = 35;
     const circularBuffer = new CircularBuffer(bufferSize, new Array(floatArraySize).fill(initialValue));
 
-    var tempChart
-    var timeChart
+    var tempChart;
+    var timeChart;
     // Função para obter dados de temperatura via AJAX
     function obterDadosTemperatura() {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit);
+                atualizarGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit,data.enabled_sensor);
                 atualizarModo(data.modo);
                 atualizarEstado(data.estado,data.estado_ga);
             })
@@ -50,19 +52,20 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit);
+                            atualizaDadosGrafico(data.temperaturas,data.media,data.upper_limit,data.lower_limit,data.time,data.general_limit,data.enabled_sensor);
                             atualizarModo(data.modo);
                             atualizarEstado(data.estado,data.estado_ga);
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
     // Função para atualizar o gráfico com os novos dados
-    function atualizarGrafico(temperaturas,media,upper,lower,time,general_limit) {
+    function atualizarGrafico(temperaturas,media,upper,lower,time,general_limit,enabled_sensor) {
         var ctx = document.getElementById('temperatureChart').getContext('2d');
         configData.upper = upper;
         configData.lower = lower;
         configData.time = time;
         configData.general_limit = general_limit;
+        configData.enabled = enabled_sensor;
         tempChart = new Chart(ctx, {
             data: {
                 labels: Array.from({length: temperaturas.max.length}, (_, i) => i + 1),
@@ -127,12 +130,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function atualizaDadosGrafico(temperaturas,media,upper,lower,time,general_limit)
+    function atualizaDadosGrafico(temperaturas,media,upper,lower,time,general_limit,enabled_sensor)
     {
         configData.upper = upper;
         configData.lower = lower;
         configData.time = time;
-        configData.general_limit = general_limit
+        configData.general_limit = general_limit;
+        configData.enabled = enabled_sensor;
+
         var newFloatArray = temperaturas.real.slice(); 
         newFloatArray.push(media);
         newFloatArray.push(media+configData.upper[32]);
@@ -260,6 +265,9 @@ document.addEventListener('DOMContentLoaded', function () {
         configData.upper[sensor_selected] = parseFloat(upper);
         configData.lower[sensor_selected] = parseFloat(lower);
         configData.time = parseInt(time);
+        if (sensor_selected < 32 ){
+            configData.enabled[sensor_selected] = document.getElementById('sensorCheckbox').checked;
+        }
 
         enviaConfig();
 
@@ -272,18 +280,24 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById("lower_temp").value = configData.lower[32];
         document.getElementById("sensor_select").value = "32"
         if (configData.general_limit){
+            document.getElementsByName("inlineRadioOptions")[0].checked = true;
             document.getElementById("sensor_select").disabled = true;
+            document.getElementById("sensorCheckbox").disabled = true;
         }else{
+            document.getElementsByName("inlineRadioOptions")[1].checked = true;
             document.getElementById("sensor_select").disabled = false;
+            document.getElementById("sensorCheckbox").disabled = false;
         }
     });
 
       document.getElementById('inlineRadio1').addEventListener('change', function () {
         if (document.getElementsByName("inlineRadioOptions")[0].checked){
             document.getElementById("sensor_select").disabled = true;
+            document.getElementById("sensorCheckbox").disabled = true;
             document.getElementById("sensor_select").value = "32"
         }else{
             document.getElementById("sensor_select").disabled = false;
+            document.getElementById("sensorCheckbox").disabled = false;
         }
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
         document.getElementById("upper_temp").value = configData.upper[sensor_selected];
@@ -294,9 +308,11 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('inlineRadio2').addEventListener('change', function () {
         if (document.getElementsByName("inlineRadioOptions")[0].checked){
             document.getElementById("sensor_select").disabled = true;
+            document.getElementById("sensorCheckbox").disabled = true;
             document.getElementById("sensor_select").value = "32"
         }else{
             document.getElementById("sensor_select").disabled = false;
+            document.getElementById("sensorCheckbox").disabled = false;
         }
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
         document.getElementById("upper_temp").value = configData.upper[sensor_selected];
@@ -308,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
         document.getElementById("upper_temp").value = configData.upper[sensor_selected];
         document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+        document.getElementById("sensorCheckbox").checked = configData.enabled[sensor_selected];
 
     });
 
@@ -363,7 +380,9 @@ document.addEventListener('DOMContentLoaded', function () {
         initiateTimeChart(novoTime);
     });
 
-        // Function to generate random RGB color values
+
+    
+    // Function to generate random RGB color values
     function generateRandomColor() {
         return 'rgb(' + Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ')';
     }

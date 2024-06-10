@@ -126,13 +126,16 @@ criar um novo arquivo python para análise dos dados
 tratar leituras vazias
 mudar o alarme para tempo ao invés de quantidade de amostras
 a média só é calculada depois da primeira leitura, enquanto isso o sistema entende que é zero e alarma
-usar variáveis de ambiente para receber os parametros de inicialização do sistema
-escrever script de instalação
+usar variáveis de ambiente para receber os parametros de inicialização do sistema - ok
+escrever script de instalação - ok
 avaliar uso do docker
 
 to do
-alterar limites apresentados na tela dependendo do selecionado no configurador
-enviar log junto com csv
-criar bash script para atualizar código
-verificar circularBuffer temperatures.js linha 135
-corrigir inicio do log de erros, média zerada
+alterar limites apresentados na tela dependendo do selecionado no configurador - ok
+enviar log junto com csv - ok
+criar bash script para atualizar código - ok
+verificar circularBuffer temperatures.js linha 135 - ok
+corrigir inicio do log de erros, média zerada - ok
+
+nuvem
+incluir texto com a versão na página
