@@ -196,10 +196,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal.classList.contains('show')) {
             var sensor_selected = parseInt(document.getElementById("sensor_select").value);
             if (sensor_selected < 32){
-                document.getElementById("modal_temp").textContent = temperaturas.real[sensor_selected];
+                document.getElementById("modal_temp").textContent = temperaturas.real[sensor_selected].toFixed(2);
             }
         }
     }
+
+corrigir 'todos' que aparece na lista de sensores ... 
+apagar calibração no modo general_limit ...
 
 
     function atualizarEstado(estado,estado_ga) {
