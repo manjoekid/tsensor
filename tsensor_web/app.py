@@ -4,28 +4,49 @@ from shared_memory_dict import SharedMemoryDict
 import os
 import datetime
 import csv
+import time
 
 
 
 app = Flask(__name__,
             static_folder='static',
             template_folder='templates')
-app.secret_key = 'your_secret_key'
+app.secret_key = os.urandom(24)  # Secret key for session management
+SESSION_TIMEOUT = 60  # Session timeout in seconds 
 
 # Mock user data (replace with a database in a real application)
 users = {
-    'admin@admin.com': generate_password_hash('password123'),
-    'tsensor@admin.com': generate_password_hash('1234'),
+    'admin@tsensor.com': generate_password_hash('password123'),
+    'user@tsensor.com': generate_password_hash('1234'),
 }
 
 tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
+
+
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    app.permanent_session_lifetime = SESSION_TIMEOUT
+
+@app.before_request
+def check_session_timeout():
+    now = time.time()
+    if 'last_active' in session:
+        if now - session['last_active'] > SESSION_TIMEOUT:
+            session.pop('user', None)
+            session.pop('last_active', None)
+            return redirect(url_for('login'))
+    session['last_active'] = now
+
+
 
 
 # Routes
 @app.route('/')
 def home():
     if 'user' in session:
-        return render_template('temperatura.html')
+        return render_template('temperatura.html', user=session['user'])
     else:
         return 'Welcome to the home page. <a href="/login">Login</a>'
 
@@ -51,6 +72,7 @@ def logout():
 # Rota para fornecer os dados de temperatura via AJAX
 @app.route('/dados_temperatura', methods=['GET'])
 def dados_temperatura():
+    session['last_active'] = time.time()
     # Dados de exemplo - 32 temperaturas
     #temperatures = test_serial.read_real_time_temperature()
     temperature =  tsensor_pipe["temperature"]
@@ -63,7 +85,7 @@ def dados_temperatura():
     upper_limit = tsensor_pipe["limite_superior"]
     lower_limit = tsensor_pipe["limite_inferior"]
     calibracao = tsensor_pipe["calibracao"]
-    time = tsensor_pipe["limite_consecutivo"]
+    time_limit = tsensor_pipe["limite_consecutivo"]
     general_limit = tsensor_pipe["general_limit"]
     enabled_sensor = tsensor_pipe["enabled_sensor"]
 
@@ -77,7 +99,7 @@ def dados_temperatura():
                         'upper_limit':upper_limit,
                         'lower_limit':lower_limit,
                         'calibracao':calibracao,
-                        'time':time,
+                        'time':time_limit,
                         'general_limit':general_limit,
                         'enabled_sensor':enabled_sensor})
 
@@ -97,7 +119,7 @@ def alterar_modo():
 def alterar_config():
     upper_temp = request.json.get('upper')
     lower_temp = request.json.get('lower')
-    time = request.json.get('time')
+    time_limit = request.json.get('time')
     general_limit = request.json.get('general_limit')
     enabled_sensor = request.json.get('enabled')
     calibracao = request.json.get('calibracao')
@@ -105,7 +127,7 @@ def alterar_config():
     
     tsensor_pipe["limite_superior"] = upper_temp
     tsensor_pipe["limite_inferior"] = lower_temp
-    tsensor_pipe["limite_consecutivo"] = time
+    tsensor_pipe["limite_consecutivo"] = time_limit
     tsensor_pipe["general_limit"] = general_limit
     tsensor_pipe["enabled_sensor"] = enabled_sensor
     tsensor_pipe["calibracao"] = calibracao

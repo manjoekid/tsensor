@@ -201,8 +201,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-corrigir 'todos' que aparece na lista de sensores ... 
-apagar calibração no modo general_limit ...
+//corrigir 'todos' que aparece na lista de sensores ... 
+//apagar calibração no modo general_limit ...
 
 
     function atualizarEstado(estado,estado_ga) {
@@ -292,7 +292,7 @@ apagar calibração no modo general_limit ...
 
       });
 
-      document.getElementById("botao_modal").addEventListener("click", function(){
+      function clickModal(){
         // Get form values
         document.getElementById("time").value = configData.time;
         document.getElementById("upper_temp").value = configData.upper[32];
@@ -311,7 +311,7 @@ apagar calibração no modo general_limit ...
             document.getElementById("sensorCheckbox").style.display = 'block';
             document.getElementById("sensorEnabledLabel").style.display = 'block';
         }
-    });
+    }
 
       document.getElementById('inlineRadio1').addEventListener('change', function () {
         if (document.getElementsByName("inlineRadioOptions")[0].checked){
@@ -544,6 +544,28 @@ apagar calibração no modo general_limit ...
     
       
       document.getElementById("search-btn").addEventListener("click", searchAndDownload);
+
+
+      document.getElementById('factory-reset-btn').addEventListener('click', function() {
+        // Open confirmation window
+        if (confirm('Tem certeza que quer limpar todas as configurações?')) {
+          // If user clicks OK, call the JS function
+          factoryResetConfigs();
+        }
+      });
+    
+      function factoryResetConfigs() {
+        
+        configData.general_limit = true; // Geral (true) ou individual (false)
+        configData.upper = [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];            //index 32 é o valor geral
+        configData.lower = [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];
+        configData.calibracao = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                                 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0];
+        configData.enabled = [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
+                              true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true];
+        configData.time = 7;
+        enviaConfig();
+      }
 
 
     // Chamar a função para obter dados de temperatura a cada 1 segundo

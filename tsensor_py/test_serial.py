@@ -25,6 +25,7 @@ try:
 
     CONST_READ_DELAY = 60
     CONST_READ_TIME = 1000
+    CONST_PRE_ALARME_INIT = 30   # tempo em segundos de avaliação do estado de pré-alarme
 
     env_line = os.getenv("upper_limit")
     # Convert the string representation of list to a Python list
@@ -60,12 +61,16 @@ try:
 
 
     debug_mode = (os.getenv('debug_mode',default='False')=='True')
+    verbose = int(os.getenv('verbose',default='0'))
 
     modo = os.getenv('modo',default='auto')
 
     alarm_on = (os.getenv('alarm_on',default='True')=='True')
 
     outlier_temp = int(os.getenv('outlier_temp',default='150'))
+
+    pre_alarme_timeout = int(os.getenv('outlier_temp',default='600')) # tempo que dura o pré-alarme
+
 
     #set_key(find_dotenv(), 'upper_limit', "7.7")
     #load_dotenv(override=True)
@@ -76,6 +81,7 @@ except:
 current_hour = 0
 current_hour_alarm = 0
 
+pre_alarme_init = CONST_PRE_ALARME_INIT
 
 # Create a serial object
 ser_sensor = serial.Serial(port_serial, baudrate_serial, timeout=timeout_serial)
@@ -121,6 +127,7 @@ tsensor_pipe["temperature"] = temp_max_array.tolist()
 tsensor_pipe["temperature_max"] = temp_max_array.tolist()
 tsensor_pipe["temperature_min"] = temp_max_array.tolist()
 tsensor_pipe["enabled_sensor"] = enabled_sensor
+tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
 
 
 
@@ -144,34 +151,38 @@ def save_change_to_log(tipo,mensagem):
             csv_writer_temp = csv.writer(csv_file_log)
             csv_writer_temp.writerow([timestamp, tipo, mensagem])
 
+def print_msg(message,level):
+    if level < verbose:
+        print(message)
 
 def turn_off_alarm():
     global alarm_on
-
+    if not check_Alarm() :
+        return
+    
     if tsensor_pipe["modo"] == 'desligado' :
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
 
         # Writing data to the TCP port
         if debug_mode :
-            data_received_mod = [1]
+            data_received_mod = [0]
         else:
             data_received_mod = tcp_modbus.write_single_register(500, 0)    #Desliga alarme
         alarm_on = False
         tsensor_pipe["estado"] = False
         
         set_key(find_dotenv(), 'alarm_on', 'False')   #salva estado do alarme no '.env'
-
-        print(f"[{timestamp}] Turning off Alarm - Data written: (500, 0)")
+        print_msg(f"[{timestamp}] Turning off Alarm - Data written: (500, 0)",1)
         # Reading data from the RS485 port
         save_change_to_log("Modbus","Desligando Alarme, Modbus retornou "+str(data_received_mod))
-        print(f"Data received from Modbus: {data_received_mod}")
+        print_msg(f"Data received from Modbus: {data_received_mod}",1)
         return
 
 def turn_on_alarm():
     global alarm_on
-    #if check_Alarm() :
-    #    return
+    if check_Alarm() :
+        return
 
     if tsensor_pipe["modo"] == 'auto' :
         if check_GA():
@@ -182,18 +193,17 @@ def turn_on_alarm():
                 data_received_mod = True
             else :
                 data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
-
-            print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
+            print_msg(f"[{timestamp}] Turning alarm on - Data written: (500, 1)",2)
             save_change_to_log("Modbus","Ligando Alarme, Modbus "+("resposta OK!" if data_received_mod else "aparentemente desligado, sem resposta"))
-
-            print(f"Data received from Modbus: {data_received_mod}")
+            
+            print_msg(f"Data received from Modbus: {data_received_mod}",2)
             check_Alarm()
     
             set_key(find_dotenv(), 'alarm_on', 'True')   #salva estado do alarme no '.env'
 
             return
         else:
-            print("Erro - Alarme não foi acionado - GA Desligado")
+            print_msg("Erro - Alarme não foi acionado - GA Desligado",1)
             save_change_to_log("Erro","Alarme não foi acionado - GA Desligado")
             #alarm_on = False
             #tsensor_pipe["estado"] = False
@@ -204,14 +214,13 @@ def turn_on_alarm():
         # Writing data to the TCP port
 
         if debug_mode:
-                data_received_mod = True
+            data_received_mod = True
         else :
             data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
-
-        print(f"[{timestamp}] Turning alarm on - Data written: (500, 1)")
+        print_msg(f"[{timestamp}] Turning alarm on - Data written: (500, 1)",2)
         save_change_to_log("Modbus","Ligando Alarme, Modbus "+("resposta OK!" if data_received_mod else "aparentemente desligado, sem resposta"))
 
-        print(f"Data received from Modbus: {data_received_mod}")
+        print_msg(f"Data received from Modbus: {data_received_mod}",2)
         check_Alarm()
         set_key(find_dotenv(), 'alarm_on', 'True')   #salva estado do alarme no '.env'
         return
@@ -220,21 +229,20 @@ def check_GA():
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
     # Reading data to the TCP port
     if debug_mode:
-                data_received_mod = [1]
+        data_received_mod = [1]
     else :
         data_received_mod = tcp_modbus.read_holding_registers(70, 1)
     
-
-    print(f"[{timestamp}] Checking if GA is ON - Data written: (70, 1)")
-    # Reading data from the RS485 port
+    print_msg(f"[{timestamp}] Checking if GA is ON - Data written: (70, 1)",2)
+        # Reading data from the RS485 port
         
-    print(f"Data received from Modbus: {data_received_mod}")
+    print_msg(f"Data received from Modbus: {data_received_mod}",2)
     if data_received_mod == [1] :
-        print(f"[{timestamp}] GA is ON")
+        print_msg(f"[{timestamp}] GA is ON",2)
         tsensor_pipe["estado_ga"] = True
         return True
     else:
-        print(f"[{timestamp}] GA is OFF")
+        print_msg(f"[{timestamp}] GA is OFF",2)
         tsensor_pipe["estado_ga"] = False
         return False        
 
@@ -248,7 +256,7 @@ def return_alarm_to_state(alarm_saved_state):
         
         alarm_on = alarm_state
         tsensor_pipe["estado"] = alarm_on
-        print(f"Inicializando o alarme conforme dados salvos '.env'. Modbus retornou: {data_received_mod}")
+        print_msg(f"Inicializando o alarme conforme dados salvos '.env'. Modbus retornou: {data_received_mod}",0)
 
 
 def check_Alarm():
@@ -261,15 +269,13 @@ def check_Alarm():
     else :
         data_received_mod = tcp_modbus.read_holding_registers(500, 1)
         
-
-    print(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)")
+    print_msg(f"[{timestamp}] Checking if Alarme is ON - Data written: (500, 1)",2)
     # Reading data from the RS485 port
-        
-    print(f"Data received from Modbus: {data_received_mod}")
+    print_msg(f"Data received from Modbus: {data_received_mod}",2)
 
     alarm_state = (data_received_mod == [1]) 
     if (alarm_on!=alarm_state):
-        print(f"[{timestamp}] Alarm changed state to {alarm_state}")
+        print_msg(f"[{timestamp}] Alarm changed state to {alarm_state}",1)
         alarm_on = alarm_state
         tsensor_pipe["estado"] = alarm_on
         set_key(find_dotenv(), 'alarm_on', 'True' if alarm_on else 'False')   #salva estado do alarme no '.env'
@@ -281,7 +287,7 @@ def check_update_from_interface():
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Modo alterado para "+modo)
+        save_change_to_log("Info","Modo alterado para "+modo_string(modo))
         if modo == 'ligado':
             turn_on_alarm()
         else :
@@ -310,23 +316,41 @@ def check_update_from_interface():
         calibracao = tsensor_pipe["calibracao"]
         set_key(find_dotenv(), 'calibracao', str(calibracao))  
         save_change_to_log("Info","Calibração dos sensores alterada para "+str(calibracao))
+    if tsensor_pipe["pre_alarme_timeout"] != pre_alarme_timeout :
+        pre_alarme_timeout = tsensor_pipe["pre_alarme_timeout"]
+        set_key(find_dotenv(), 'pre_alarme_timeout', str(pre_alarme_timeout))  
+        save_change_to_log("Info","Timeout de pré-alarme alterado para "+str(pre_alarme_timeout))
+
+
+
+def modo_string(modo):
+    if modo == 'ligado':
+        return "Ligado Manual"
+    elif modo == 'desligado':
+        return "Desligado Manual"
+    elif modo == 'auto':
+        return "Alarme Operacional"
+    elif modo == 'pre_alarme':
+        return "Pré-Alarme"
+    else:
+        return "Erro - Modo não reconhecido"
 
 def reiniciar_haste(timeOff,timeOn):
     
     data_received_mod = tcp_modbus.write_single_register(502, 1)    #Desliga haste
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    print(f"[{timestamp}] Desligando a haste - Data written: (502, 1)")
+    print_msg(f"[{timestamp}] Desligando a haste - Data written: (502, 1)",1)
     
-    print(f"Data received from Modbus: {data_received_mod}")
+    print_msg(f"Data received from Modbus: {data_received_mod}",1)
     time.sleep(timeOff)
 
     data_received_mod = tcp_modbus.write_single_register(502, 0)    #Liga haste
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    print(f"[{timestamp}] Religando a haste - Data written: (502, 0)")
+    print_msg(f"[{timestamp}] Religando a haste - Data written: (502, 0)",1)
     
-    print(f"Data received from Modbus: {data_received_mod}")
+    print_msg(f"Data received from Modbus: {data_received_mod}",1)
     time.sleep(timeOn)
     return
 
@@ -362,21 +386,72 @@ def inicializa_haste():
             time.sleep(0.1)
 
         if read_count != 16 :
-            print(f"Haste inicializada com {read_count}/16 controladores, reiniciando haste.")
+            print_msg(f"Haste inicializada com {read_count}/16 controladores, reiniciando haste.",0)
             save_change_to_log("Erro","Haste inicializada com "+str(read_count)+"/16 controladores, reiniciando haste.")
             reiniciar_haste(5,5)
         else:
-            print("Haste inicializada")
+            print_msg("Haste inicializada",0)
             save_change_to_log("Info","Haste inicializada com todos os controladores OK.")
             average_temp = np.sum(avg_init)/32
             return
-    print("Haste inicializada porém com sensores faltando.")
+    print_msg("Haste inicializada porém com sensores faltando.",0)
     save_change_to_log("Info","Haste inicializada com sensores faltando.")
     if read_count != 0 :
         average_temp = np.sum(avg_init)/read_count
     else :
         average_temp = 0.0
     return
+
+
+def analisa_alarme(sensor):
+    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp
+
+    acionou_alarme = False
+    ### verifica se o sensor está habilitado
+    if enabled_sensor[sensor] :
+        ### verifica se o sensor estivá com a temperatura acima do limite outlier
+        if temp_array[sensor] > outlier_temp :
+            ### verifica se ultrapassou limite superior
+            if temp_array[sensor] > upper_limit_total :
+                alarm_up_array[sensor] += 1
+                if alarm_up_array[sensor] > consecutive_limit :
+                    turn_on_alarm()
+                    acionou_alarme = True
+
+                    print_msg(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
+                    save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[sensor],"Sim",alarm_up_array[sensor])
+                else: 
+                    save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[sensor],"Não",alarm_up_array[sensor])
+                    pass
+            else :   # se temperatura não estiver maior que o limite, zera o contador
+                alarm_up_array[sensor] = 0
+
+            ### verifica se ultrapassou limite inferior
+            if temp_array[sensor] < lower_limit_total :
+                alarm_down_array[sensor] += 1
+                if alarm_down_array[sensor] > consecutive_limit :
+                    turn_on_alarm()
+                    acionou_alarme = True
+
+                    print_msg(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
+                    save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[sensor],"Sim",alarm_down_array[sensor])
+                else: 
+                    save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[sensor],"Não",alarm_down_array[sensor])
+                    pass
+            else :   # se temperatura não estiver menor que o limite, zera o contador
+                alarm_down_array[sensor] = 0
+        else:    # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
+            temp_shm[sensor] = average_temp
+    else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
+        temp_shm[sensor] = average_temp
+
+    return acionou_alarme
+
+
+
+#############################################################################
+##########################  INICIO DO LOOP  #################################
+#############################################################################
 
 try:
     
@@ -391,15 +466,22 @@ try:
         with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
             csv_writer_log = csv.writer(csv_file_log)
             csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
-
-    save_change_to_log("Info","Sistema iniciado.")
+    if debug_mode :
+        save_change_to_log("Info","Sistema iniciado em modo debug.")
+        print_msg("Sistema iniciado em modo debug",0)
+    else:
+        save_change_to_log("Info","Sistema iniciado.")
+        print_msg("Sistema iniciado",0)
 
     return_alarm_to_state(alarm_on)   #retorna alarme para o estado inicial gravado no '.env'
 
     inicializa_haste()
     reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
-    reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
+    if alarm_on:             # verifica se o alarme está ligado ao iniciar o sistema, se estiver, desabilita o pré-alarme
+        pre_alarme_init = 0
+
+
 
     while True:
         ### inicia marcação de tempo para que cada leitura seja feita em intervalos de 1s
@@ -424,12 +506,18 @@ try:
             with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
                 csv_writer_log = csv.writer(csv_file_log)
                 csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
-            print(f"[{timestamp}] Creating a new CSV file for the new hour.")
+            print_msg(f"[{timestamp}] Creating a new CSV file for the new hour.",0)
 
 
         ### zera o array de temperaturas
         temp_array = np.zeros(32, dtype='float32')      ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA CSV
         temp_shm = np.zeros(32, dtype='float32')        ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA PÁGINA DO USUÁRIO - sem valores zerados
+
+
+        
+        if pre_alarme_init > 0 :
+            pre_alarme_init -= 1
+
 
 
         ### inicia a contagem de 16 controladores
@@ -459,14 +547,12 @@ try:
                 data_received = ser_sensor.read(12).hex()
 
 
-            print(f"[{timestamp}] Data written: {hex_data_to_write} Data received: {data_received}")
+            print_msg(f"[{timestamp}] Data written: {hex_data_to_write} Data received: {data_received}",3)
             #time.sleep(5)
 
 
 
             if ((data_received[:4] == "2165") and (len(data_received) == 12)):
-
-                
 
                 ####################################################################
                 ### recorta os dados do primeiro sensor ############################
@@ -484,43 +570,9 @@ try:
                 temp_array[i*2] += calibracao[i*2]
                 temp_shm[i*2] += calibracao[i*2]
 
-                ### verifica se o sensor está habilitado
-                if enabled_sensor[i*2] :
-                    ### verifica se o sensor estivá com a temperatura acima do limite outlier
-                    if temp_array[i*2] > outlier_temp :
-                        ### verifica se ultrapassou limite superior
-                        if temp_array[i*2] > upper_limit_total :
-                            alarm_up_array[i*2] += 1
-                            if alarm_up_array[i*2] > consecutive_limit :
-                                turn_on_alarm()
-                                
+                alarmou = False
+                alarmou |= analisa_alarme(i*2)
 
-                                print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                                save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Sim",alarm_up_array[i*2])
-                            else: 
-                                save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[i*2],"Não",alarm_up_array[i*2])
-                                pass
-                        else :   # se temperatura não estiver maior que o limite, zera o contador
-                            alarm_up_array[i*2] = 0
-
-                        ### verifica se ultrapassou limite inferior
-                        if temp_array[i*2] < lower_limit_total :
-                            alarm_down_array[i*2] += 1
-                            if alarm_down_array[i*2] > consecutive_limit :
-                                turn_on_alarm()
-                                
-
-                                print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {i*2} com temperatura de %.2f" % temp_array[i*2])
-                                save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Sim",alarm_up_array[i*2])
-                            else: 
-                                save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[i*2],"Não",alarm_up_array[i*2])
-                                pass
-                        else :   # se temperatura não estiver menor que o limite, zera o contador
-                            alarm_down_array[i*2] = 0
-                    else:    # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
-                        temp_shm[i*2] = average_temp
-                else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
-                    temp_shm[i*2] = average_temp
                 ####################################################################
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
@@ -536,50 +588,36 @@ try:
                 temp_array[(i*2)+1] += calibracao[(i*2)+1]
                 temp_shm[(i*2)+1] += calibracao[(i*2)+1]
 
+                alarmou |= analisa_alarme((i*2)+1)
 
-                ### verifica se o sensor está habilitado
-                if enabled_sensor[(i*2)+1]:
-                    ### verifica se o sensor estivá com a temperatura acima do limite outlier
-                    if temp_array[(i*2)+1] > outlier_temp :
-                        ### verifica se ultrapassou limite superior
-                        if temp_array[(i*2)+1] > upper_limit_total :
-                            alarm_up_array[(i*2)+1] += 1
-                            if alarm_up_array[(i*2)+1] > consecutive_limit :
-                                turn_on_alarm()
 
-                                print(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                                save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
-                            else: 
-                                save_alarm_to_log((i*2)+1,upper_limit_total,"Superior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
-                                pass
+                ########  analisa lógica do pré-alarme   ###########
+                if (alarmou & (pre_alarme_init>0)):
+                    modo = 'pre-alarme'
+                    tsensor_pipe['modo'] = modo
+
+                if modo == 'pre-alarme':
+                    if pre_alarme_timeout > 0:
+                        pre_alarme_timeout -= 1
+                        tsensor_pipe['pre_alarme_timeout'] = pre_alarme_timeout
+                    else:
+                        if alarmou:
+                            modo = 'ligado'
                         else :
-                            alarm_up_array[(i*2)+1] = 0
+                            modo = 'desligado'
+                            turn_off_alarm()
+                            modo = 'auto'
+                        tsensor_pipe['modo'] = modo
 
-                        ### verifica se ultrapassou limite inferior
-                        if temp_array[(i*2)+1] < lower_limit_total :
-                            alarm_down_array[(i*2)+1] += 1
-                            if alarm_down_array[(i*2)+1] > consecutive_limit :
-                                turn_on_alarm()
 
-                                print(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {(i*2)+1} com temperatura de %.2f" % temp_array[(i*2)+1])
-                                save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Sim",alarm_up_array[(i*2)+1])
-                            else: 
-                                save_alarm_to_log((i*2)+1,lower_limit_total,"Inferior",temp_array[(i*2)+1],"Não",alarm_up_array[(i*2)+1])
-                                pass
 
-                        else :
-                            alarm_down_array[(i*2)+1] = 0 
-                    else :   # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
-                        temp_shm[(i*2)+1] = average_temp
-                else :   # se o sensor não estiver habilitado, salva a temperatura média na lista shm
-                    temp_shm[(i*2)+1] = average_temp
             else:
                 ################### ERRO DE LEITURA ######################
                 temp_shm[i*2] = average_temp
                 temp_shm[(i*2)+1] = average_temp
 
             delay_read_finish = round((time.time() * 1000 ) - delay_read_start)
-            print(f"Read processing time: {delay_read_finish}ms")
+            print_msg(f"Read processing time: {delay_read_finish}ms",2)
             if delay_read_finish < CONST_READ_DELAY :
                 time.sleep((CONST_READ_DELAY-delay_read_finish)/1000)
             else :
@@ -597,6 +635,7 @@ try:
                 turn_on_alarm()
                 pass
 
+                
 
         check_Alarm()
 
@@ -610,7 +649,7 @@ try:
                                         , temp_array[20], temp_array[21], temp_array[22], temp_array[23]
                                         , temp_array[24], temp_array[25], temp_array[26], temp_array[27]
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
-                                        , alarm_on, check_GA(), modo ])
+                                        , alarm_on, check_GA(), modo_string(modo) ])
 
         for i in range(len(temp_array)):
             temp_max_array[i] = max(temp_max_array[i],temp_array[i])
@@ -656,8 +695,8 @@ try:
 
 
         frame_finish = round((time.time() * 1000 ) - frame_start)
-        print(f"Total processing time: {frame_finish}ms")
-        print(f"array: {temp_array}")
+        print_msg(f"Total processing time: {frame_finish}ms",2)
+        print_msg(f"array: {temp_array}",3)
         if frame_finish < CONST_READ_TIME :
             time.sleep((CONST_READ_TIME-frame_finish)/1000)
         else :
