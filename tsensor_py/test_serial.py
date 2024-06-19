@@ -67,9 +67,9 @@ try:
 
     alarm_on = (os.getenv('alarm_on',default='True')=='True')
 
-    outlier_temp = int(os.getenv('outlier_temp',default='150'))
+    outlier_temp = float(os.getenv('outlier_temp',default='150.0'))
 
-    pre_alarme_timeout = int(os.getenv('outlier_temp',default='600')) # tempo que dura o pré-alarme
+    pre_alarme_timeout = int(os.getenv('pre_alarme_timeout',default='600')) # tempo que dura o pré-alarme
 
 
     #set_key(find_dotenv(), 'upper_limit', "7.7")
@@ -152,7 +152,7 @@ def save_change_to_log(tipo,mensagem):
             csv_writer_temp.writerow([timestamp, tipo, mensagem])
 
 def print_msg(message,level):
-    if level < verbose:
+    if level <= verbose:
         print(message)
 
 def turn_off_alarm():
@@ -160,7 +160,7 @@ def turn_off_alarm():
     if not check_Alarm() :
         return
     
-    if tsensor_pipe["modo"] == 'desligado' :
+    if modo == 'desligado' :
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
 
@@ -191,6 +191,7 @@ def turn_on_alarm():
             # Writing data to the TCP port
             if debug_mode:
                 data_received_mod = True
+                alarm_on = True
             else :
                 data_received_mod = tcp_modbus.write_single_register(500, 1)    #Liga alarme
             print_msg(f"[{timestamp}] Turning alarm on - Data written: (500, 1)",2)
@@ -208,7 +209,7 @@ def turn_on_alarm():
             #alarm_on = False
             #tsensor_pipe["estado"] = False
             return
-    elif tsensor_pipe["modo"] == 'ligado' :
+    elif ((tsensor_pipe["modo"] == 'ligado' )| (tsensor_pipe["modo"] == 'pre-alarme')) :
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
         # Writing data to the TCP port
@@ -265,7 +266,7 @@ def check_Alarm():
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
     if debug_mode:
-        data_received_mod = [1]
+        data_received_mod = [1 if alarm_on else 0]
     else :
         data_received_mod = tcp_modbus.read_holding_registers(500, 1)
         
@@ -283,7 +284,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
@@ -410,7 +411,7 @@ def analisa_alarme(sensor):
     ### verifica se o sensor está habilitado
     if enabled_sensor[sensor] :
         ### verifica se o sensor estivá com a temperatura acima do limite outlier
-        if temp_array[sensor] > outlier_temp :
+        if temp_array[sensor] < outlier_temp :
             ### verifica se ultrapassou limite superior
             if temp_array[sensor] > upper_limit_total :
                 alarm_up_array[sensor] += 1
@@ -518,7 +519,7 @@ try:
         if pre_alarme_init > 0 :
             pre_alarme_init -= 1
 
-
+        alarmou = False
 
         ### inicia a contagem de 16 controladores
         for i in range(16):
@@ -570,7 +571,7 @@ try:
                 temp_array[i*2] += calibracao[i*2]
                 temp_shm[i*2] += calibracao[i*2]
 
-                alarmou = False
+                
                 alarmou |= analisa_alarme(i*2)
 
                 ####################################################################
@@ -595,21 +596,7 @@ try:
                 if (alarmou & (pre_alarme_init>0)):
                     modo = 'pre-alarme'
                     tsensor_pipe['modo'] = modo
-
-                if modo == 'pre-alarme':
-                    if pre_alarme_timeout > 0:
-                        pre_alarme_timeout -= 1
-                        tsensor_pipe['pre_alarme_timeout'] = pre_alarme_timeout
-                    else:
-                        if alarmou:
-                            modo = 'ligado'
-                        else :
-                            modo = 'desligado'
-                            turn_off_alarm()
-                            modo = 'auto'
-                        tsensor_pipe['modo'] = modo
-
-
+                    turn_on_alarm()
 
             else:
                 ################### ERRO DE LEITURA ######################
@@ -625,6 +612,18 @@ try:
                 #time.sleep(0.01)
                 
 
+        if modo == 'pre-alarme':
+            if pre_alarme_timeout > 0:
+                pre_alarme_timeout -= 1
+                tsensor_pipe['pre_alarme_timeout'] = pre_alarme_timeout
+            else:
+                if alarmou:
+                    modo = 'auto'
+                else :
+                    modo = 'desligado'
+                    turn_off_alarm()
+                    modo = 'auto'
+                tsensor_pipe['modo'] = modo
         check_update_from_interface()
         
         if alarm_on :

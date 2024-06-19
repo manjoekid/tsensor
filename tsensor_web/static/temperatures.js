@@ -25,7 +25,8 @@ var configData = {
                   0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
     enabled : [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
                true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-    time : 7
+    time : 7,
+    pre_alarme_timeout : 90
 };
 
 
@@ -230,7 +231,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function atualizarModo(modo) {
-        document.getElementById('modoSelecao').value = modo;
+        if (modo == 'pre-alarme'){
+            const select = document.getElementById('modoSelecao');
+            const option = select.querySelector('option[value="pre_alarme"]');
+            option.disabled = false; // Temporarily enable the option
+            select.value = 'pre_alarme'; // Programmatically select the option with value '3'
+            option.disabled = true; // Disable the option again
+            // Trigger a change event to notify any event listeners
+            const event = new Event('change');
+            select.dispatchEvent(event);
+        }else {
+            document.getElementById('modoSelecao').value = modo;
+        }
     }
 
  

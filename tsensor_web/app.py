@@ -88,6 +88,7 @@ def dados_temperatura():
     time_limit = tsensor_pipe["limite_consecutivo"]
     general_limit = tsensor_pipe["general_limit"]
     enabled_sensor = tsensor_pipe["enabled_sensor"]
+    pre_alarme_timeout = tsensor_pipe['pre_alarme_timeout']
 
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
@@ -101,14 +102,15 @@ def dados_temperatura():
                         'calibracao':calibracao,
                         'time':time_limit,
                         'general_limit':general_limit,
-                        'enabled_sensor':enabled_sensor})
+                        'enabled_sensor':enabled_sensor,
+                        'pre_alarme_timeout':pre_alarme_timeout})
 
     return intermed
 
 @app.route('/alterar_modo', methods=['POST'])
 def alterar_modo():
     novo_modo = request.json.get('modo')
-    if novo_modo in ['ligado', 'desligado', 'auto']:
+    if novo_modo in ['ligado', 'desligado', 'auto', 'pre-alarme']:
         tsensor_pipe["modo"] = novo_modo
         return jsonify({'message': f'Modo alterado para {novo_modo}'})
     else:
@@ -123,6 +125,7 @@ def alterar_config():
     general_limit = request.json.get('general_limit')
     enabled_sensor = request.json.get('enabled')
     calibracao = request.json.get('calibracao')
+    pre_alarme_timeout = request.json.get('pre_alarme_timeout')
     
     
     tsensor_pipe["limite_superior"] = upper_temp
@@ -131,6 +134,8 @@ def alterar_config():
     tsensor_pipe["general_limit"] = general_limit
     tsensor_pipe["enabled_sensor"] = enabled_sensor
     tsensor_pipe["calibracao"] = calibracao
+    tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
+    
 
     return jsonify({'message': 'Config alterada'})
 
