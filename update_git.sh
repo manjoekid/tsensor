@@ -88,7 +88,7 @@ reinstall_all(){
 
     sudo chown -R root:www-data /home/tsensor/tsensor/tsensor_web/   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
     sudo chmod -R 775 /home/tsensor/tsensor/tsensor_web/   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
-
+    sudo chmod +x /home/tsensor/tsensor/update_git.sh   || { echo "Failed to start tsensor web service. Exiting."; exit 1; }
 
 }
 

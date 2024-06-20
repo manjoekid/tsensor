@@ -44,15 +44,15 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                atualizarGrafico(data.temperaturas,data.media);
+                atualizarGrafico(data.temperaturas,parseFloat(data.media));
                 atualizarModo(data.modo);
                 atualizarEstado(data.estado,data.estado_ga);
-                configData.upper = data.upper_limit;
-                configData.lower = data.lower_limit;
-                configData.time = data.time;
+                configData.upper = data.upper_limit.map(str => parseFloat(str));
+                configData.lower = data.lower_limit.map(str => parseFloat(str));
+                configData.time = parseInt(data.time);
                 configData.general_limit = data.general_limit;
                 configData.enabled = data.enabled_sensor;
-                configData.calibracao = data.calibracao;
+                configData.calibracao = data.calibracao.map(str => parseFloat(str));
 
             })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
@@ -62,15 +62,15 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/dados_temperatura')
             .then(response => response.json())
             .then(data => {
-                            atualizaDadosGrafico(data.temperaturas,data.media);
+                            atualizaDadosGrafico(data.temperaturas,parseFloat(data.media));
                             atualizarModo(data.modo);
                             atualizarEstado(data.estado,data.estado_ga);
-                            configData.upper = data.upper_limit;
-                            configData.lower = data.lower_limit;
-                            configData.time = data.time;
+                            configData.upper = data.upper_limit.map(str => parseFloat(str));
+                            configData.lower = data.lower_limit.map(str => parseFloat(str));
+                            configData.time = parseInt(data.time);
                             configData.general_limit = data.general_limit;
                             configData.enabled = data.enabled_sensor;
-                            configData.calibracao = data.calibracao;
+                            configData.calibracao = data.calibracao.map(str => parseFloat(str));
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
     }
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                             type: 'bar',
                             label: 'max',
-                            data: temperaturas.max,
+                            data: temperaturas.max.map(str => parseFloat(str)),
                             borderColor: 'red',
                             borderWidth: 2,
                             fill: false
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {
                             type: 'bar',
                             label: 'last',
-                            data: temperaturas.real,
+                            data: temperaturas.real.map(str => parseFloat(str)),
                             borderColor: 'green',
                             borderWidth: 2,
                             fill: false
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {
                             type: 'bar',
                             label: 'min',
-                            data: temperaturas.min,
+                            data: temperaturas.min.map(str => parseFloat(str)),
                             borderColor: 'blue',
                             borderWidth: 2,
                             fill: false
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function atualizaDadosGrafico(temperaturas,media)
     {
 
-        var newFloatArray = temperaturas.real.slice(); 
+        var newFloatArray = temperaturas.real.slice().map(str => parseFloat(str));; 
         newFloatArray.push(media);
         newFloatArray.push(media+configData.upper[32]);
         newFloatArray.push(media-configData.lower[32]);
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var check_min = document.getElementById("check_min").checked;
         if (check_max) {
             tempChart.show(0);
-            tempChart.data.datasets[0].data = temperaturas.max; 
+            tempChart.data.datasets[0].data = temperaturas.max.map(str => parseFloat(str)); 
         }else{
             tempChart.hide(0);
             //tempChart.data.datasets[0].data = Array.from({length: temperaturas.max.length}, (_, i) => 0)
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (check_real) {
             tempChart.show(1);
-            tempChart.data.datasets[1].data = temperaturas.real; 
+            tempChart.data.datasets[1].data = temperaturas.real.map(str => parseFloat(str)); 
         }else{
             tempChart.hide(1);
             //tempChart.data.datasets[1].data = Array.from({length: temperaturas.max.length}, (_, i) => 0)
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (check_min) {
             tempChart.show(2);
-            tempChart.data.datasets[2].data = temperaturas.min; 
+            tempChart.data.datasets[2].data = temperaturas.min.map(str => parseFloat(str)); 
         }else{
             tempChart.hide(2);
             //tempChart.data.datasets[2].data = Array.from({length: temperaturas.max.length}, (_, i) => 0)
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal.classList.contains('show')) {
             var sensor_selected = parseInt(document.getElementById("sensor_select").value);
             if (sensor_selected < 32){
-                document.getElementById("modal_temp").textContent = temperaturas.real[sensor_selected].toFixed(2);
+                document.getElementById("modal_temp").textContent = parseFloat(temperaturas.real[sensor_selected]).toFixed(2);
             }else{
                 document.getElementById("modal_temp").textContent = media.toFixed(2);
             }
