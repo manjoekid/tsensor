@@ -40,15 +40,13 @@ def check_session_timeout():
     session['last_active'] = now
 
 
-
-
 # Routes
 @app.route('/')
 def home():
     if 'user' in session:
         return render_template('temperatura.html', user=session['user'])
     else:
-        return 'Welcome to the home page. <a href="/login">Login</a>'
+        return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

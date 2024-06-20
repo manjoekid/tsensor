@@ -198,6 +198,8 @@ document.addEventListener('DOMContentLoaded', function () {
             var sensor_selected = parseInt(document.getElementById("sensor_select").value);
             if (sensor_selected < 32){
                 document.getElementById("modal_temp").textContent = temperaturas.real[sensor_selected].toFixed(2);
+            }else{
+                document.getElementById("modal_temp").textContent = media.toFixed(2);
             }
         }
     }
@@ -233,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function atualizarModo(modo) {
         if (modo == 'pre-alarme'){
             const select = document.getElementById('modoSelecao');
-            const option = select.querySelector('option[value="pre_alarme"]');
+            const option = select.querySelector('option[value="pre-alarme"]');
             option.disabled = false; // Temporarily enable the option
             select.value = 'pre_alarme'; // Programmatically select the option with value '3'
             option.disabled = true; // Disable the option again
@@ -282,6 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var lower = document.getElementById("lower_temp").value;
         var calibra = document.getElementById("calibracao").value;
         var time = document.getElementById("time").value;
+        var pre_alarme_timeout = document.getElementById("pre_alarme").value;
         // Perform validation or other operations as needed
         if(upper.trim() === "" || lower.trim() === "" || time.trim() === "") {
           alert("Por favor preencha todos os campos.");
@@ -296,74 +299,88 @@ document.addEventListener('DOMContentLoaded', function () {
         configData.lower[sensor_selected] = parseFloat(lower);
         configData.calibracao[sensor_selected] = parseFloat(calibra);
         configData.time = parseInt(time);
+        configData.pre_alarme_timeout = parseInt(pre_alarme_timeout);
         if (sensor_selected < 32 ){
             configData.enabled[sensor_selected] = document.getElementById('sensorCheckbox').checked;
         }
 
         enviaConfig();
 
-      });
+    });
 
-      function clickModal(){
-        // Get form values
-        document.getElementById("time").value = configData.time;
-        document.getElementById("upper_temp").value = configData.upper[32];
-        document.getElementById("lower_temp").value = configData.lower[32];
-        document.getElementById("sensor_select").value = "32"
-        if (configData.general_limit){
-            document.getElementsByName("inlineRadioOptions")[0].checked = true;
-            document.getElementById("sensor_select").disabled = true;
-            //document.getElementById("sensorCheckbox").disabled = true;
-            document.getElementById("sensorCheckbox").style.display = 'none';
-            document.getElementById("sensorEnabledLabel").style.display = 'none';
-        }else{
-            document.getElementsByName("inlineRadioOptions")[1].checked = true;
-            document.getElementById("sensor_select").disabled = false;
-            //document.getElementById("sensorCheckbox").disabled = false;
-            document.getElementById("sensorCheckbox").style.display = 'block';
-            document.getElementById("sensorEnabledLabel").style.display = 'block';
-        }
+    var btn_modal = document.getElementById("botao_modal");
+    if (btn_modal != null){
+        document.getElementById("botao_modal").addEventListener("click", function(){
+            // Get form values
+            document.getElementById("pre_alarme").value = configData.pre_alarme_timeout;
+            document.getElementById("time").value = configData.time;
+            document.getElementById("upper_temp").value = configData.upper[32];
+            document.getElementById("lower_temp").value = configData.lower[32];
+
+            
+            const select = document.getElementById('sensor_select');
+            select.value = "32";
+            const option = select.querySelector('option[value="32"]');
+            option.style.display = 'block';
+
+
+            if (configData.general_limit){
+ 
+                document.getElementsByName("inlineRadioOptions")[0].checked = true;
+                document.getElementById("sensor_select").disabled = true;
+                //document.getElementById("sensorCheckbox").disabled = true;
+                document.getElementById("sensorCheckbox").style.display = 'none';
+                document.getElementById("sensorEnabledLabel").style.display = 'none';
+            }else{
+                select.value = "0";
+                option.style.display = 'none';
+
+
+                document.getElementsByName("inlineRadioOptions")[1].checked = true;
+                document.getElementById("sensor_select").disabled = false;
+                //document.getElementById("sensorCheckbox").disabled = false;
+                document.getElementById("sensorCheckbox").style.display = 'block';
+                document.getElementById("sensorEnabledLabel").style.display = 'block';
+            }
+        });
     }
 
-      document.getElementById('inlineRadio1').addEventListener('change', function () {
+    function changeSelectGeneral(){
+        const select = document.getElementById('sensor_select');
+        select.value = "32";
+        const option = select.querySelector('option[value="32"]');
+        option.style.display = 'block';
         if (document.getElementsByName("inlineRadioOptions")[0].checked){
             document.getElementById("sensor_select").disabled = true;
-            //document.getElementById("sensorCheckbox").disabled = true;
             document.getElementById("sensorCheckbox").style.display = 'none';
             document.getElementById("sensorEnabledLabel").style.display = 'none';
-            document.getElementById("sensor_select").value = "32"
+            document.getElementById("cal_temp_label").innerHTML = 'Temperatura média:';
+            document.getElementById("calibracao").style.display = 'none';
+            document.getElementById("cal_label").style.display = 'none';
         }else{
+            select.value = "0";
+            option.style.display = 'none';
             document.getElementById("sensor_select").disabled = false;
             document.getElementById("sensorCheckbox").disabled = false;
+            document.getElementById("calibracao").style.display = 'block';
+            document.getElementById("cal_label").style.display = 'block';
+            document.getElementById("cal_temp_label").innerHTML = 'Temperatura atual:';
+            document.getElementById("calibracao").value = configData.calibracao[0];
         }
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
+        var sensor_selected = parseInt(select.value);
         document.getElementById("upper_temp").value = configData.upper[sensor_selected];
         document.getElementById("lower_temp").value = configData.lower[sensor_selected];
-        document.getElementById("calibracao").value = configData.calibracao[sensor_selected];
+    }
 
-      });
+    document.getElementById('inlineRadio1').addEventListener('change', function () {
+        changeSelectGeneral();
+    });
 
-      document.getElementById('inlineRadio2').addEventListener('change', function () {
-        if (document.getElementsByName("inlineRadioOptions")[0].checked){
-            document.getElementById("sensor_select").disabled = true;
-            //document.getElementById("sensorCheckbox").disabled = true;
-            document.getElementById("sensorCheckbox").style.display = 'none';
-            document.getElementById("sensorEnabledLabel").style.display = 'none';
-            document.getElementById("sensor_select").value = "32"
-        }else{
-            document.getElementById("sensor_select").disabled = false;
-            //document.getElementById("sensorCheckbox").disabled = false;
-            document.getElementById("sensorCheckbox").style.display = 'block';
-            document.getElementById("sensorEnabledLabel").style.display = 'block';
+    document.getElementById('inlineRadio2').addEventListener('change', function () {
+        changeSelectGeneral();
+    });
 
-        }
-        var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
-        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
-        document.getElementById("calibracao").value = configData.calibracao[sensor_selected];
-      });
-
-      document.getElementById('sensor_select').addEventListener('change', function () {
+    document.getElementById('sensor_select').addEventListener('change', function () {
 
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
         document.getElementById("upper_temp").value = configData.upper[sensor_selected];
@@ -576,7 +593,10 @@ document.addEventListener('DOMContentLoaded', function () {
         configData.enabled = [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
                               true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true];
         configData.time = 7;
+        configData.pre_alarme_timeout = 90;
+
         enviaConfig();
+
       }
 
 

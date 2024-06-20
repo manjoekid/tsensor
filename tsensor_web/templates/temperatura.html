@@ -49,7 +49,7 @@
                     <option value="ligado">Ligado Manual</option>
                     <option value="desligado">Desligado Manual</option>
                     <option value="auto">Alarme Operacional</option>
-                    <option value="pre_alarme" disabled>Pré-Alarme</option>
+                    <option value="pre-alarme" disabled>Pré-Alarme</option>
                 </select>
             </div>
         </div>
@@ -60,7 +60,7 @@
                 <label for="modoSelecao" class="form-label">Estado GA:</label>
                 <button class="btn btn-danger rounded-pill px-3" type="button" id="botao_estado_ga">Danger</button>
                 {% if user == 'admin@tsensor.com' %}
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target=".bd-modal-lg" id="botao_modal" onclick=clickModal>Configurar</button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target=".bd-modal-lg" id="botao_modal">Configurar</button>
                 {% endif %}
             </div>
         </div>
@@ -109,6 +109,9 @@
         </div>
         <div class="modal-body">
             <form id="config_form">
+                <label for="pre_alarme">Timeout Pré-Alarme:</label>
+                <input type="number" id="pre_alarme" name="pre_alarme" required>
+                <br><br>
                 <label for="time">Tempo Geral:</label>
                 <input type="number" id="time" name="time" required>
                 <br><br>
@@ -170,10 +173,10 @@
                     </label>
                 </div>
                 <br>
-                <label>Temperatura atual:</label>
+                <label id="cal_temp_label">Temperatura atual:</label>
                 <label id="modal_temp">0.0</label> 
                 <br>
-                <label for="calibracao">Calibração:</label>
+                <label id="cal_label" for="calibracao">Calibração:</label>
                 <input type="number" id="calibracao" name="calibracao" >
             </form>
             <label id="form_info"></label>
