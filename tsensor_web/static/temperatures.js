@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 atualizarGrafico(data.temperaturas,parseFloat(data.media));
-                atualizarModo(data.modo);
+                atualizarModo(data.modo,data.pre_alarme_timeout);
                 atualizarEstado(data.estado,data.estado_ga);
                 configData.upper = data.upper_limit.map(str => parseFloat(str));
                 configData.lower = data.lower_limit.map(str => parseFloat(str));
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                             atualizaDadosGrafico(data.temperaturas,parseFloat(data.media));
-                            atualizarModo(data.modo);
+                            atualizarModo(data.modo,data.pre_alarme_timeout);
                             atualizarEstado(data.estado,data.estado_ga);
                             configData.upper = data.upper_limit.map(str => parseFloat(str));
                             configData.lower = data.lower_limit.map(str => parseFloat(str));
@@ -228,12 +228,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function atualizarModo(modo) {
+    function atualizarModo(modo,timeout) {
         if (modo == 'pre-alarme'){
             const select = document.getElementById('modoSelecao');
             const option = select.querySelector('option[value="pre-alarme"]');
             option.disabled = false; // Temporarily enable the option
-            select.value = 'pre-alarme'; // Programmatically select the option with value '3'
+            option.text = 'pre-alarme (' + timeout + ')'
+            select.value =  'pre-alarme'; 
             option.disabled = true; // Disable the option again
             // Trigger a change event to notify any event listeners
             const event = new Event('change');
