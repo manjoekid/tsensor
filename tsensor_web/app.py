@@ -73,17 +73,17 @@ def dados_temperatura():
     session['last_active'] = time.time()
     # Dados de exemplo - 32 temperaturas
     #temperatures = test_serial.read_real_time_temperature()
-    temperature =  tsensor_pipe["temperature"]
-    temperature_max = tsensor_pipe["temperature_max"]
-    temperature_min = tsensor_pipe["temperature_min"]
+    temperature =  [str(num) for num in tsensor_pipe["temperature"]]
+    temperature_max = [str(num) for num in tsensor_pipe["temperature_max"]]
+    temperature_min = [str(num) for num in tsensor_pipe["temperature_min"]]
     modo_atual = tsensor_pipe["modo"]
     estado_atual = tsensor_pipe["estado"]
     estado_ga = tsensor_pipe["estado_ga"]
-    temperature_media = tsensor_pipe["media"]
-    upper_limit = tsensor_pipe["limite_superior"]
-    lower_limit = tsensor_pipe["limite_inferior"]
-    calibracao = tsensor_pipe["calibracao"]
-    time_limit = tsensor_pipe["limite_consecutivo"]
+    temperature_media = str(tsensor_pipe["media"])
+    upper_limit = [str(num) for num in tsensor_pipe["limite_superior"]]
+    lower_limit = [str(num) for num in tsensor_pipe["limite_inferior"]]
+    calibracao = [str(num) for num in tsensor_pipe["calibracao"]]
+    time_limit = str(tsensor_pipe["limite_consecutivo"])
     general_limit = tsensor_pipe["general_limit"]
     enabled_sensor = tsensor_pipe["enabled_sensor"]
     pre_alarme_timeout = tsensor_pipe['pre_alarme_timeout']
