@@ -334,7 +334,7 @@ def modo_string(modo):
         return "Desligado Manual"
     elif modo == 'auto':
         return "Alarme Operacional"
-    elif modo == 'pre_alarme':
+    elif modo == 'pre-alarme':
         return "Pré-Alarme"
     else:
         return "Erro - Modo não reconhecido"
