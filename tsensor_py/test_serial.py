@@ -119,19 +119,16 @@ tsensor_pipe = SharedMemoryDict(name='temperatures', size=4096)
 
 tsensor_pipe["estado"] = alarm_on
 tsensor_pipe["estado_ga"] = False
-string_array = [str(num) for num in upper_limit]
-tsensor_pipe["limite_superior"] = string_array
-string_array = [str(num) for num in lower_limit]
-tsensor_pipe["limite_inferior"] = string_array
-string_array = [str(num) for num in calibracao]
-tsensor_pipe["calibracao"] = string_array
+tsensor_pipe["limite_superior"] = [str(num) for num in upper_limit]
+tsensor_pipe["limite_inferior"] = [str(num) for num in lower_limit]
+tsensor_pipe["calibracao"] = [str(num) for num in calibracao]
 tsensor_pipe["general_limit"] = general_limit
-tsensor_pipe["limite_consecutivo"] = consecutive_limit
+tsensor_pipe["limite_consecutivo"] = str(consecutive_limit)
 tsensor_pipe["modo"] = modo
-tsensor_pipe["media"] = average_temp
-tsensor_pipe["temperature"] = temp_max_array.tolist()
-tsensor_pipe["temperature_max"] = temp_max_array.tolist()
-tsensor_pipe["temperature_min"] = temp_max_array.tolist()
+tsensor_pipe["media"] = str(average_temp)
+tsensor_pipe["temperature"] = [str(num) for num in temp_max_array.tolist()]
+tsensor_pipe["temperature_max"] = [str(num) for num in temp_max_array.tolist()]
+tsensor_pipe["temperature_min"] = [str(num) for num in temp_max_array.tolist()]
 tsensor_pipe["enabled_sensor"] = enabled_sensor
 tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
 
@@ -308,7 +305,7 @@ def check_update_from_interface():
         set_key(find_dotenv(), 'lower_limit', str(lower_limit))   #salva estado do alarme no '.env'
         save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit))
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
-        consecutive_limit = tsensor_pipe["limite_consecutivo"]
+        consecutive_limit = float(tsensor_pipe["limite_consecutivo"])
         set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   
         save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit))
     if tsensor_pipe["general_limit"] != general_limit :
@@ -665,9 +662,9 @@ try:
                     temp_min_array[i] = min(temp_min_array[i],temp_array[i])
 
         
-        tsensor_pipe["temperature"] = temp_shm.tolist()
-        tsensor_pipe["temperature_max"] = temp_max_array.tolist()
-        tsensor_pipe["temperature_min"] = temp_min_array.tolist()
+        tsensor_pipe["temperature"] = [str(num) for num in temp_shm.tolist()]
+        tsensor_pipe["temperature_max"] = [str(num) for num in temp_max_array.tolist()]
+        tsensor_pipe["temperature_min"] = [str(num) for num in temp_min_array.tolist()]
         tsensor_pipe["estado"] = alarm_on
 
 
@@ -683,7 +680,7 @@ try:
             average_temp = np.sum(average_array)/read_count
         else :
             average_temp = 0.0
-        tsensor_pipe["media"] = average_temp
+        tsensor_pipe["media"] = str(average_temp)
 
 
 
