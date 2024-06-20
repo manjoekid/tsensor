@@ -204,10 +204,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-//corrigir 'todos' que aparece na lista de sensores ... 
-//apagar calibração no modo general_limit ...
-
-
     function atualizarEstado(estado,estado_ga) {
         var botao = document.getElementById("botao_estado_alarme");
         if (estado) {
