@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const select = document.getElementById('modoSelecao');
             const option = select.querySelector('option[value="pre-alarme"]');
             option.disabled = false; // Temporarily enable the option
-            select.value = 'pre_alarme'; // Programmatically select the option with value '3'
+            select.value = 'pre-alarme'; // Programmatically select the option with value '3'
             option.disabled = true; // Disable the option again
             // Trigger a change event to notify any event listeners
             const event = new Event('change');
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var time = document.getElementById("time").value;
         var pre_alarme_timeout = document.getElementById("pre_alarme").value;
         // Perform validation or other operations as needed
-        if(upper.trim() === "" || lower.trim() === "" || time.trim() === "") {
+        if(upper.trim() === "" || lower.trim() === "" || time.trim() === "" || calibra.trim() === "" || pre_alarme_timeout.trim() === "") {
           alert("Por favor preencha todos os campos.");
           return; // Prevent further execution
         }
@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById("time").value = configData.time;
             document.getElementById("upper_temp").value = configData.upper[32];
             document.getElementById("lower_temp").value = configData.lower[32];
-
+            document.getElementById("calibracao").value = configData.calibracao[0];
             
             const select = document.getElementById('sensor_select');
             select.value = "32";
