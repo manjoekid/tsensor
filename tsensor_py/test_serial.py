@@ -653,13 +653,13 @@ try:
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
                                         , alarm_on, check_GA(), modo_string(modo) ])
 
-        for i in range(len(temp_array)):
-            temp_max_array[i] = max(temp_max_array[i],temp_array[i])
-            if temp_array[i] != 0.0 :
+        for i in range(len(temp_shm)):
+            temp_max_array[i] = max(temp_max_array[i],temp_shm[i])
+            if temp_shm[i] != 0.0 :
                 if temp_min_array[i] == 0.0 :
-                    temp_min_array[i] = temp_array[i]
+                    temp_min_array[i] = temp_shm[i]
                 else :
-                    temp_min_array[i] = min(temp_min_array[i],temp_array[i])
+                    temp_min_array[i] = min(temp_min_array[i],temp_shm[i])
 
         
         tsensor_pipe["temperature"] = temp_shm.tolist()
@@ -673,7 +673,14 @@ try:
         ####################################################################
         average_array = np.zeros(32, dtype='float32')
         for i in range(32):
-            average_array[i] = temp_array[i] if enabled_sensor[i] else 0
+            if enabled_sensor[i] :
+                if temp_array[i] < outlier_temp :
+                    average_array[i] = temp_array[i]
+                else :
+                    average_array[i] = 0
+            else :
+                average_array[i] = 0
+            
 
         read_count = np.count_nonzero(average_array)   # verifica quantas temperaturas são diferentes de 0
         if read_count != 0 :
