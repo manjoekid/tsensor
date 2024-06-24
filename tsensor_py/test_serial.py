@@ -25,7 +25,6 @@ try:
 
     CONST_READ_DELAY = 60
     CONST_READ_TIME = 1000
-    CONST_PRE_ALARME_INIT = 30   # tempo em segundos de avaliação do estado de pré-alarme
 
     env_line = os.getenv("upper_limit")
     # Convert the string representation of list to a Python list
@@ -70,7 +69,7 @@ try:
     outlier_temp = float(os.getenv('outlier_temp',default='150.0'))
 
     pre_alarme_timeout = int(os.getenv('pre_alarme_timeout',default='600')) # tempo que dura o pré-alarme
-
+    pre_alarme_init = int(os.getenv('pre_alarme_init',default='0')) # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
 
     #set_key(find_dotenv(), 'upper_limit', "7.7")
     #load_dotenv(override=True)
@@ -80,8 +79,6 @@ except:
     
 current_hour = 0
 current_hour_alarm = 0
-
-pre_alarme_init = CONST_PRE_ALARME_INIT
 
 # Create a serial object
 ser_sensor = serial.Serial(port_serial, baudrate_serial, timeout=timeout_serial)
