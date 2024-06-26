@@ -87,6 +87,7 @@ def dados_temperatura():
     general_limit = tsensor_pipe["general_limit"]
     enabled_sensor = tsensor_pipe["enabled_sensor"]
     pre_alarme_timeout = tsensor_pipe['pre_alarme_timeout']
+    repeat_lost = tsensor_pipe['repeat_lost']
 
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
@@ -101,7 +102,8 @@ def dados_temperatura():
                         'time':time_limit,
                         'general_limit':general_limit,
                         'enabled_sensor':enabled_sensor,
-                        'pre_alarme_timeout':pre_alarme_timeout})
+                        'pre_alarme_timeout':pre_alarme_timeout,
+                        'repeat_lost':repeat_lost})
 
     return intermed
 
@@ -124,7 +126,7 @@ def alterar_config():
     enabled_sensor = request.json.get('enabled')
     calibracao = request.json.get('calibracao')
     pre_alarme_timeout = request.json.get('pre_alarme_timeout')
-    
+    repeat_lost = request.json.get('repeat_lost')
     
     tsensor_pipe["limite_superior"] = upper_temp
     tsensor_pipe["limite_inferior"] = lower_temp
@@ -133,6 +135,7 @@ def alterar_config():
     tsensor_pipe["enabled_sensor"] = enabled_sensor
     tsensor_pipe["calibracao"] = calibracao
     tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
+    tsensor_pipe["repeat_lost"] = repeat_lost
     
 
     return jsonify({'message': 'Config alterada'})
@@ -141,11 +144,12 @@ def alterar_config():
 def search_files():
     start = request.json.get('startTime')
     stop = request.json.get('stopTime')
+    realLog = request.json.get('realLog')
     directory_path = '../tsensor_py/output/'  # Update with the path to your directory
     files = os.listdir(directory_path)
 
     output_file = '../tsensor_py/output/download.csv'
-    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria(file,start,stop)]
+    filtered_files = [os.path.join(directory_path, file) for file in files if meets_criteria(file,start,stop,realLog)]
     filtered_files = sorted(filtered_files)
     append_csv_files(filtered_files,output_file)
 
@@ -159,21 +163,35 @@ def search_files():
     jsonReturn = jsonify('download.csv','logs.csv')
     return jsonReturn
 
-def meets_criteria(fileName,start,stop):
+def meets_criteria(fileName,start,stop,realLog):
+    if realLog :
+        filePreName = fileName[:12]
 
-    filePreName = fileName[:12]
+        if (filePreName == "output_temp_") :
+            #fileTime = fileName.substring(12,16) + "-" + fileName.substring(16,18) + "-" + fileName.substring(18,20) + "T" + fileName.substring(21,23) + ":" + fileName.substring(23,25) 
+            file_time = datetime.datetime.strptime(fileName[12:25], "%Y%m%d_%H%M%S")
+            start_time = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M")
+            stop_time = datetime.datetime.strptime(stop, "%Y-%m-%dT%H:%M")
+            
+            if start_time <= file_time <= stop_time:
+                return True
+            else:
+                return False
+        
+    else :
+        filePreName = fileName[:17]
+        if (filePreName == "output_interface_") :
+            #fileTime = fileName.substring(12,16) + "-" + fileName.substring(16,18) + "-" + fileName.substring(18,20) + "T" + fileName.substring(21,23) + ":" + fileName.substring(23,25) 
+            file_time = datetime.datetime.strptime(fileName[17:30], "%Y%m%d_%H%M%S")
+            start_time = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M")
+            stop_time = datetime.datetime.strptime(stop, "%Y-%m-%dT%H:%M")
+            
+            if start_time <= file_time <= stop_time:
+                return True
+            else:
+                return False
 
-    if (filePreName == "output_temp_") :
-        #fileTime = fileName.substring(12,16) + "-" + fileName.substring(16,18) + "-" + fileName.substring(18,20) + "T" + fileName.substring(21,23) + ":" + fileName.substring(23,25) 
-        file_time = datetime.datetime.strptime(fileName[12:25], "%Y%m%d_%H%M%S")
-        start_time = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M")
-        stop_time = datetime.datetime.strptime(stop, "%Y-%m-%dT%H:%M")
-        
-        if start_time <= file_time <= stop_time:
-            return True
-        else:
-            return False
-        
+
 def meets_criteria_log(fileName,start,stop):
 
     filePreName = fileName[:11]

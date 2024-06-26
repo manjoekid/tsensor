@@ -24,7 +24,7 @@ try:
     auto_open_tcp = (os.getenv('auto_open_tcp',default='True')=='True')
 
     CONST_READ_DELAY = 60
-    CONST_READ_TIME = 1000
+    read_time = int(os.getenv('read_time',default='1000'))
 
     env_line = os.getenv("upper_limit")
     # Convert the string representation of list to a Python list
@@ -71,8 +71,7 @@ try:
     pre_alarme_timeout = int(os.getenv('pre_alarme_timeout',default='600')) # tempo que dura o pré-alarme
     pre_alarme_init = int(os.getenv('pre_alarme_init',default='0')) # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
 
-    #set_key(find_dotenv(), 'upper_limit', "7.7")
-    #load_dotenv(override=True)
+    repeat_lost = (os.getenv('repeat_lost',default='True')=='True') # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
 
 except:
     print("Erro ao carregar variáveis de ambiente")
@@ -81,7 +80,8 @@ current_hour = 0
 current_hour_alarm = 0
 
 # Create a serial object
-ser_sensor = serial.Serial(port_serial, baudrate_serial, timeout=timeout_serial)
+if not debug_mode:
+    ser_sensor = serial.Serial(port_serial, baudrate_serial, timeout=timeout_serial)
 #ser_sensor = serial.Serial(port=port1, baudrate=baudrate1, bytesize=8, parity='N', stopbits=2, timeout=timeout1, xonxoff=0, rtscts=0)
 tcp_modbus = ModbusClient(host=host_tcp, port=port_tcp, unit_id=unit_id_tcp, auto_open=auto_open_tcp)
 
@@ -89,6 +89,7 @@ tcp_modbus = ModbusClient(host=host_tcp, port=port_tcp, unit_id=unit_id_tcp, aut
 # Open a CSV file for writing temp
 current_datetime = time.strftime("%Y%m%d_%H%M%S")
 csv_file_path_temp = f'./output/output_temp_{current_datetime}.csv'
+csv_file_path_interface = f'./output/output_interface_{current_datetime}.csv'
 csv_header_temp = ['Timestamp', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4'
                            , 'Sensor 5', 'Sensor 6', 'Sensor 7', 'Sensor 8'
                            , 'Sensor 9', 'Sensor 10', 'Sensor 11', 'Sensor 12'
@@ -128,7 +129,7 @@ tsensor_pipe["temperature_max"] = temp_max_array.tolist()
 tsensor_pipe["temperature_min"] = temp_max_array.tolist()
 tsensor_pipe["enabled_sensor"] = enabled_sensor
 tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
-
+tsensor_pipe["repeat_lost"] = repeat_lost
 
 
 def save_alarm_to_log(sensor,temp_limite,limite,temperatura,acionamento,contagem):
@@ -154,6 +155,14 @@ def save_change_to_log(tipo,mensagem):
 def print_msg(message,level):
     if level <= verbose:
         print(message)
+
+def blink_led_error(led_state):
+    global debug_mode
+    if debug_mode :
+        data_received_mod = [0]
+    else:
+        data_received_mod = tcp_modbus.write_single_register(501, led_state)    #Liga/desliga led
+    print_msg(f"Data received from Modbus after turning LED on/off: {data_received_mod}",1)
 
 def turn_off_alarm():
     global alarm_on
@@ -284,7 +293,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout, repeat_lost
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
@@ -321,6 +330,11 @@ def check_update_from_interface():
         pre_alarme_timeout = tsensor_pipe["pre_alarme_timeout"]
         set_key(find_dotenv(), 'pre_alarme_timeout', str(pre_alarme_timeout))  
         save_change_to_log("Info","Timeout de pré-alarme alterado para "+str(pre_alarme_timeout))
+    if tsensor_pipe["repeat_lost"] != repeat_lost :
+        repeat_lost = tsensor_pipe["repeat_lost"]
+        set_key(find_dotenv(), 'repeat_lost', str(repeat_lost))  
+        save_change_to_log("Info","Filtro repete anterior alterado para "+("Ligado" if repeat_lost else "Desligado"))
+
 
 
 
@@ -405,7 +419,7 @@ def inicializa_haste():
 
 
 def analisa_alarme(sensor):
-    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp
+    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp, repeat_lost
 
     acionou_alarme = False
     ### verifica se o sensor está habilitado
@@ -443,6 +457,8 @@ def analisa_alarme(sensor):
                 alarm_down_array[sensor] = 0
         else:    # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
             temp_shm[sensor] = average_temp
+            if repeat_lost :
+                temp_shm[sensor] = last_temp_array[sensor]
     else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
         temp_shm[sensor] = average_temp
 
@@ -464,6 +480,9 @@ try:
         with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
             csv_writer_temp = csv.writer(csv_file_temp)
             csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
+        with open(csv_file_path_interface, mode='w', newline='') as csv_file_interface:
+            csv_writer_interface= csv.writer(csv_file_interface)
+            csv_writer_interface.writerow(csv_header_temp)  # Write the header to the CSV file
         with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
             csv_writer_log = csv.writer(csv_file_log)
             csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
@@ -482,7 +501,7 @@ try:
     if alarm_on:             # verifica se o alarme está ligado ao iniciar o sistema, se estiver, desabilita o pré-alarme
         pre_alarme_init = 0
 
-
+    last_temp_array = np.zeros(32, dtype='float32')
 
     while True:
         ### inicia marcação de tempo para que cada leitura seja feita em intervalos de 1s
@@ -496,6 +515,7 @@ try:
             current_hour = time.localtime().tm_hour 
             if csv_file_path_temp:
                 csv_file_temp.close()
+                csv_file_interface.close()
 
             # Create a new CSV file
             current_datetime = time.strftime("%Y%m%d_%H%M%S")
@@ -504,12 +524,16 @@ try:
             with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
                 csv_writer_temp = csv.writer(csv_file_temp)
                 csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
+            with open(csv_file_path_interface, mode='w', newline='') as csv_file_interface:
+                csv_writer_interface= csv.writer(csv_file_interface)
+                csv_writer_interface.writerow(csv_header_temp)  # Write the header to the CSV file
             with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
                 csv_writer_log = csv.writer(csv_file_log)
                 csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
             print_msg(f"[{timestamp}] Creating a new CSV file for the new hour.",0)
 
 
+        
         ### zera o array de temperaturas
         temp_array = np.zeros(32, dtype='float32')      ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA CSV
         temp_shm = np.zeros(32, dtype='float32')        ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA PÁGINA DO USUÁRIO - sem valores zerados
@@ -602,6 +626,9 @@ try:
                 ################### ERRO DE LEITURA ######################
                 temp_shm[i*2] = average_temp
                 temp_shm[(i*2)+1] = average_temp
+                if repeat_lost :
+                    temp_shm[i*2] = last_temp_array[i*2]
+                    temp_shm[(i*2)+1] = last_temp_array[(i*2)+1]
 
             delay_read_finish = round((time.time() * 1000 ) - delay_read_start)
             print_msg(f"Read processing time: {delay_read_finish}ms",2)
@@ -624,6 +651,7 @@ try:
                     turn_off_alarm()
                     modo = "auto"
                 tsensor_pipe["modo"] = modo
+
         check_update_from_interface()
         
         if alarm_on :
@@ -649,7 +677,17 @@ try:
                                         , temp_array[24], temp_array[25], temp_array[26], temp_array[27]
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
                                         , alarm_on, check_GA(), modo_string(modo) ])
-
+        with open(csv_file_path_interface, mode='a', newline='') as csv_file_interface:
+            csv_writer_interface = csv.writer(csv_file_interface)
+            csv_writer_interface.writerow([timestamp, temp_shm[0], temp_shm[1], temp_shm[2], temp_shm[3]
+                                        , temp_shm[4], temp_shm[5], temp_shm[6], temp_shm[7]
+                                        , temp_shm[8], temp_shm[9], temp_shm[10], temp_shm[11]
+                                        , temp_shm[12], temp_shm[13], temp_shm[14], temp_shm[15]
+                                        , temp_shm[16], temp_shm[17], temp_shm[18], temp_shm[19]
+                                        , temp_shm[20], temp_shm[21], temp_shm[22], temp_shm[23]
+                                        , temp_shm[24], temp_shm[25], temp_shm[26], temp_shm[27]
+                                        , temp_shm[28], temp_shm[29], temp_shm[30], temp_shm[31]
+                                        , alarm_on, check_GA(), modo_string(modo) ])
         for i in range(len(temp_shm)):
             temp_max_array[i] = max(temp_max_array[i],temp_shm[i])
             if temp_shm[i] != 0.0 :
@@ -664,6 +702,7 @@ try:
         tsensor_pipe["temperature_min"] = temp_min_array.tolist()
         tsensor_pipe["estado"] = alarm_on
 
+        last_temp_array = temp_shm.copy()
 
         ####################################################################
         ##### Cálculo da média de temperaturas #############################
@@ -692,6 +731,8 @@ try:
 
         if read_count != 32:                #verifica se tem falha na leitura dos sensores
             reboot_sensor_count+=1
+            if reboot_sensor_count > 5 :
+                blink_led_error(True)
             if reboot_sensor_count > 600:   #se tiver por mais de 10min (600 leituras) com sensores faltando, reinicia haste     
                 reiniciar_haste(2,3)
                 reboot_sensor_count = 0
@@ -703,8 +744,8 @@ try:
         frame_finish = round((time.time() * 1000 ) - frame_start)
         print_msg(f"Total processing time: {frame_finish}ms",2)
         print_msg(f"array: {temp_array}",3)
-        if frame_finish < CONST_READ_TIME :
-            time.sleep((CONST_READ_TIME-frame_finish)/1000)
+        if frame_finish < read_time :
+            time.sleep((read_time-frame_finish)/1000)
         else :
             time.sleep(0.1)
 
@@ -719,4 +760,5 @@ finally:
     # Close the serial port
     ser_sensor.close()
     csv_file_temp.close()
+    csv_file_interface.close()
     tsensor_pipe.shm.close()

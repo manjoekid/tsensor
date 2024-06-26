@@ -26,7 +26,8 @@ var configData = {
     enabled : [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
                true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
     time : 7,
-    pre_alarme_timeout : 90
+    pre_alarme_timeout : 90,
+    repeat_lost : false
 };
 
 
@@ -52,6 +53,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 configData.time = parseInt(data.time);
                 configData.general_limit = data.general_limit;
                 configData.enabled = data.enabled_sensor;
+                configData.pre_alarme_timeout = data.pre_alarme_timeout;
+                configData.repeat_lost = data.repeat_lost;
                 configData.calibracao = data.calibracao.map(str => parseFloat(str));
 
             })
@@ -70,6 +73,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             configData.time = parseInt(data.time);
                             configData.general_limit = data.general_limit;
                             configData.enabled = data.enabled_sensor;
+                            configData.pre_alarme_timeout = data.pre_alarme_timeout;
+                            configData.repeat_lost = data.repeat_lost;
                             configData.calibracao = data.calibracao.map(str => parseFloat(str));
                           })
             .catch(error => console.error('Erro ao obter dados de temperatura:', error));
@@ -282,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var calibra = document.getElementById("calibracao").value;
         var time = document.getElementById("time").value;
         var pre_alarme_timeout = document.getElementById("pre_alarme").value;
+        var repeat_lost = document.getElementById("repeatLostCheckbox").checked;
         // Perform validation or other operations as needed
         if(upper.trim() === "" || lower.trim() === "" || time.trim() === "" || calibra.trim() === "" || pre_alarme_timeout.trim() === "") {
           alert("Por favor preencha todos os campos.");
@@ -297,6 +303,7 @@ document.addEventListener('DOMContentLoaded', function () {
         configData.calibracao[sensor_selected] = parseFloat(calibra);
         configData.time = parseInt(time);
         configData.pre_alarme_timeout = parseInt(pre_alarme_timeout);
+        configData.repeat_lost = repeat_lost;
         if (sensor_selected < 32 ){
             configData.enabled[sensor_selected] = document.getElementById('sensorCheckbox').checked;
         }
@@ -310,6 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById("botao_modal").addEventListener("click", function(){
             // Get form values
             document.getElementById("pre_alarme").value = configData.pre_alarme_timeout;
+            document.getElementById("repeatLostCheckbox").checked = configData.repeat_lost;
             document.getElementById("time").value = configData.time;
             document.getElementById("upper_temp").value = configData.upper[32];
             document.getElementById("lower_temp").value = configData.lower[32];
@@ -536,14 +544,14 @@ document.addEventListener('DOMContentLoaded', function () {
       function searchAndDownload() {
         var startTime = document.getElementById("start-time").value;
         var stopTime = document.getElementById("stop-time").value;
-    
+        var realLog = document.getElementById("realCheckbox").checked;
         // Make an AJAX request using fetch to the Flask server to search for files
         fetch('/searchFiles', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ startTime: startTime, stopTime: stopTime })
+            body: JSON.stringify({ startTime: startTime, stopTime: stopTime, realLog: realLog })
         })
         .then(response => response.json())
         .then(files => {
@@ -591,6 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
                               true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true];
         configData.time = 7;
         configData.pre_alarme_timeout = 90;
+        configData.repeat_lost = false;
 
         enviaConfig();
 
