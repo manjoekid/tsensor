@@ -72,12 +72,16 @@ try:
     pre_alarme_init = int(os.getenv('pre_alarme_init',default='0')) # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
 
     repeat_lost = (os.getenv('repeat_lost',default='True')=='True') # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
+    repeat_lost_over = False # variável que controla se filtro repete anterior já ficou ligado por mais de 5 min (count_error_limit)
+
+    count_error_limit = int(os.getenv('count_error_limit',default='300')) # tempo em segundos entre tentativas de reinicialização da haste em caso de falha de leitura
 
 except:
     print("Erro ao carregar variáveis de ambiente")
     
 current_hour = 0
 current_hour_alarm = 0
+count_reboot = 0
 
 # Create a serial object
 if not debug_mode:
@@ -419,7 +423,7 @@ def inicializa_haste():
 
 
 def analisa_alarme(sensor):
-    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp, repeat_lost
+    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp, repeat_lost, repeat_lost_over
 
     acionou_alarme = False
     ### verifica se o sensor está habilitado
@@ -457,7 +461,7 @@ def analisa_alarme(sensor):
                 alarm_down_array[sensor] = 0
         else:    # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
             temp_shm[sensor] = average_temp
-            if repeat_lost :
+            if (repeat_lost and not repeat_lost_over):
                 temp_shm[sensor] = last_temp_array[sensor]
     else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
         temp_shm[sensor] = average_temp
@@ -626,7 +630,7 @@ try:
                 ################### ERRO DE LEITURA ######################
                 temp_shm[i*2] = average_temp
                 temp_shm[(i*2)+1] = average_temp
-                if repeat_lost :
+                if (repeat_lost and not repeat_lost_over):
                     temp_shm[i*2] = last_temp_array[i*2]
                     temp_shm[(i*2)+1] = last_temp_array[(i*2)+1]
 
@@ -708,7 +712,13 @@ try:
         ##### Cálculo da média de temperaturas #############################
         ####################################################################
         average_array = np.zeros(32, dtype='float32')
+        error_array = np.zeros(32, dtype='float32')
         for i in range(32):
+            if temp_array[i] < outlier_temp :
+                error_array[i] = temp_array[i]
+            else :
+                error_array[i] = 0
+
             if enabled_sensor[i] :
                 if temp_array[i] < outlier_temp :
                     average_array[i] = temp_array[i]
@@ -726,19 +736,46 @@ try:
         tsensor_pipe["media"] = average_temp
 
 
+        ####################################################################
+        ##### Verificação de erros na leitura  #############################
+        ####################################################################
+        #
+        #  Análise de erros de leitura
+        #  Verifica se a contagem de leituras corretas é menor que 32, se
+        #  for, indica que houve erro.
+        #  Depois de 5 leituras seguidas com erro, acende o LED indicando 
+        #  erro (somente se mais de 1 sensor estiver com problema) e 
+        #  reinicia a haste.
+        #  Se o erro persistir por 'count_error_limit' (default 5min), 
+        #  reinicia novamente o contador e habilita o repeat_lost_over.
+        #  Quando o repeat_lost_over estiver habilitado o sensor com 
+        #  falha vai pra média. Essa verificação é global para os sensores
+        #  portanto independe de contagem individual de erros.
+        #
+        #
 
-
-
-        if read_count != 32:                #verifica se tem falha na leitura dos sensores
+        read_count_error = np.count_nonzero(error_array)
+        if read_count_error != 32:                #verifica se tem falha na leitura dos sensores
             reboot_sensor_count+=1
-            if reboot_sensor_count > 5 :
+            if ((reboot_sensor_count > 5) and (read_count_error < 31)) :
                 blink_led_error(True)
-            if reboot_sensor_count > 600:   #se tiver por mais de 10min (600 leituras) com sensores faltando, reinicia haste     
-                reiniciar_haste(2,3)
+            if reboot_sensor_count == 5:
+                count_reboot+=1
+                if count_reboot < 3:        #verifica se já teve pelo menos 2 reinicializações com menos de 5min, se tiver, reinicia count_reboot e aguarda 
+                    reiniciar_haste(2,3)
+                else:
+                    if count_reboot > 10:
+                        count_reboot = 0
+            if reboot_sensor_count > count_error_limit:   #se tiver por mais de 5min (count_error_limit) com sensores faltando, reinicia contagem
                 reboot_sensor_count = 0
+                count_reboot = 0
+                if repeat_lost :
+                    repeat_lost_over = True
+
         else:
             reboot_sensor_count = 0        #se estiver OK, zera o contador
-
+            repeat_lost_over = False       #zera o verificador de filtro repete ligado por mais de 5min (count_error_limit)
+            blink_led_error(False)
 
 
         frame_finish = round((time.time() * 1000 ) - frame_start)

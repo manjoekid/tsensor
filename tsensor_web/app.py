@@ -109,7 +109,10 @@ def dados_temperatura():
 
 @app.route('/alterar_modo', methods=['POST'])
 def alterar_modo():
-    novo_modo = request.json.get('modo')
+    try:
+        novo_modo = request.json.get('modo',timeout=1)
+    except:
+        pass
     if novo_modo in ['ligado', 'desligado', 'auto', 'pre-alarme']:
         tsensor_pipe["modo"] = novo_modo
         return jsonify({'message': f'Modo alterado para {novo_modo}'})
