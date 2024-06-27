@@ -82,6 +82,7 @@ except:
 current_hour = 0
 current_hour_alarm = 0
 count_reboot = 0
+connection = ""
 
 # Create a serial object
 if not debug_mode:
@@ -134,6 +135,8 @@ tsensor_pipe["temperature_min"] = temp_max_array.tolist()
 tsensor_pipe["enabled_sensor"] = enabled_sensor
 tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
 tsensor_pipe["repeat_lost"] = repeat_lost
+tsensor_pipe["user"] = "system"
+tsensor_pipe["connection"] = connection
 
 
 def save_alarm_to_log(sensor,temp_limite,limite,temperatura,acionamento,contagem):
@@ -142,7 +145,7 @@ def save_alarm_to_log(sensor,temp_limite,limite,temperatura,acionamento,contagem
     global csv_file_log
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
-    with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
+    with open(csv_file_path_log, mode='a', newline='', encoding="utf-8") as csv_file_log:
             csv_writer_temp = csv.writer(csv_file_log)
             csv_writer_temp.writerow([timestamp, "Alarme", "Sensor "+str(sensor+1)+" com limite "+limite+" de "+str(temp_limite)+"ºC e temperatura de "+str(temperatura)+"ºC . Acionou alarme? "+acionamento+" com contagem de "+str(contagem)])
 
@@ -152,7 +155,7 @@ def save_change_to_log(tipo,mensagem):
     global csv_file_log
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
-    with open(csv_file_path_log, mode='a', newline='') as csv_file_log:
+    with open(csv_file_path_log, mode='a', newline='', encoding="utf-8") as csv_file_log:
             csv_writer_temp = csv.writer(csv_file_log)
             csv_writer_temp.writerow([timestamp, tipo, mensagem])
 
@@ -297,11 +300,14 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout, repeat_lost
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout, repeat_lost,connection
+
+    user = tsensor_pipe["user"]
+
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Modo alterado para "+modo_string(modo))
+        save_change_to_log("Info","Modo alterado para "+modo_string(modo)+" por usuário "+str(user))
         if modo == 'ligado':
             turn_on_alarm()
         else :
@@ -309,37 +315,41 @@ def check_update_from_interface():
     if tsensor_pipe["limite_superior"] != upper_limit :
         upper_limit = tsensor_pipe["limite_superior"]
         set_key(find_dotenv(), 'upper_limit', str(upper_limit))   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Limite superior alterado para "+str(upper_limit))
+        save_change_to_log("Info","Limite superior alterado para "+str(upper_limit)+" por usuário "+str(user))
     if tsensor_pipe["limite_inferior"] != lower_limit :
         lower_limit = tsensor_pipe["limite_inferior"]
         set_key(find_dotenv(), 'lower_limit', str(lower_limit))   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit))
+        save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit)+" por usuário "+str(user))
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
         consecutive_limit = tsensor_pipe["limite_consecutivo"]
         set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   
-        save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit))
+        save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit)+" por usuário "+str(user))
     if tsensor_pipe["general_limit"] != general_limit :
         general_limit = tsensor_pipe["general_limit"]
         set_key(find_dotenv(), 'general_limit', str(general_limit))  
-        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual"))
+        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual")+" por usuário "+str(user))
     if tsensor_pipe["enabled_sensor"] != enabled_sensor :
         enabled_sensor = tsensor_pipe["enabled_sensor"]
         set_key(find_dotenv(), 'enabled_sensor', str(enabled_sensor))  
-        save_change_to_log("Info","Lista de sensores habilitados alterada para "+str(enabled_sensor))
+        save_change_to_log("Info","Lista de sensores habilitados alterada para "+str(enabled_sensor)+" por usuário "+str(user))
     if tsensor_pipe["calibracao"] != calibracao :
         calibracao = tsensor_pipe["calibracao"]
         set_key(find_dotenv(), 'calibracao', str(calibracao))  
-        save_change_to_log("Info","Calibração dos sensores alterada para "+str(calibracao))
+        save_change_to_log("Info","Calibração dos sensores alterada para "+str(calibracao)+" por usuário "+str(user))
     if tsensor_pipe["pre_alarme_timeout"] != pre_alarme_timeout :
         pre_alarme_timeout = tsensor_pipe["pre_alarme_timeout"]
         set_key(find_dotenv(), 'pre_alarme_timeout', str(pre_alarme_timeout))  
-        save_change_to_log("Info","Timeout de pré-alarme alterado para "+str(pre_alarme_timeout))
+        save_change_to_log("Info","Timeout de pré-alarme alterado para "+str(pre_alarme_timeout)+" por usuário "+str(user))
     if tsensor_pipe["repeat_lost"] != repeat_lost :
         repeat_lost = tsensor_pipe["repeat_lost"]
         set_key(find_dotenv(), 'repeat_lost', str(repeat_lost))  
-        save_change_to_log("Info","Filtro repete anterior alterado para "+("Ligado" if repeat_lost else "Desligado"))
-
-
+        save_change_to_log("Info","Filtro repete anterior alterado para "+("Ligado" if repeat_lost else "Desligado")+" por usuário "+str(user))
+    if tsensor_pipe["connection"] != connection :
+        connection = tsensor_pipe["connection"]
+        save_change_to_log("Info","Nova conexão na interface por usuário "+str(user)+" - connection: " + str(connection))
+        connection = ""
+        tsensor_pipe["connection"] = connection
+        print_msg(f"[{timestamp}] Nova conexão do usuário {user}",1)
 
 
 def modo_string(modo):
@@ -481,13 +491,13 @@ try:
     
     if current_hour == 0 :
         current_hour = time.localtime().tm_hour 
-        with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
+        with open(csv_file_path_temp, mode='w', newline='', encoding="utf-8") as csv_file_temp:
             csv_writer_temp = csv.writer(csv_file_temp)
             csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
-        with open(csv_file_path_interface, mode='w', newline='') as csv_file_interface:
+        with open(csv_file_path_interface, mode='w', newline='', encoding="utf-8") as csv_file_interface:
             csv_writer_interface= csv.writer(csv_file_interface)
             csv_writer_interface.writerow(csv_header_temp)  # Write the header to the CSV file
-        with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
+        with open(csv_file_path_log, mode='w', newline='', encoding="utf-8") as csv_file_log:
             csv_writer_log = csv.writer(csv_file_log)
             csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
     if debug_mode :
@@ -525,13 +535,13 @@ try:
             current_datetime = time.strftime("%Y%m%d_%H%M%S")
             csv_file_path_temp = f'./output/output_temp_{current_datetime}.csv'
             csv_file_path_log = f'./output/output_log_{current_datetime}.csv'
-            with open(csv_file_path_temp, mode='w', newline='') as csv_file_temp:
+            with open(csv_file_path_temp, mode='w', newline='', encoding="utf-8") as csv_file_temp:
                 csv_writer_temp = csv.writer(csv_file_temp)
                 csv_writer_temp.writerow(csv_header_temp)  # Write the header to the CSV file
-            with open(csv_file_path_interface, mode='w', newline='') as csv_file_interface:
+            with open(csv_file_path_interface, mode='w', newline='', encoding="utf-8") as csv_file_interface:
                 csv_writer_interface= csv.writer(csv_file_interface)
                 csv_writer_interface.writerow(csv_header_temp)  # Write the header to the CSV file
-            with open(csv_file_path_log, mode='w', newline='') as csv_file_log:
+            with open(csv_file_path_log, mode='w', newline='', encoding="utf-8") as csv_file_log:
                 csv_writer_log = csv.writer(csv_file_log)
                 csv_writer_log.writerow(csv_header_log)  # Write the header to the CSV file
             print_msg(f"[{timestamp}] Creating a new CSV file for the new hour.",0)
@@ -670,7 +680,7 @@ try:
 
         check_Alarm()
 
-        with open(csv_file_path_temp, mode='a', newline='') as csv_file_temp:
+        with open(csv_file_path_temp, mode='a', newline='', encoding="utf-8") as csv_file_temp:
             csv_writer_temp = csv.writer(csv_file_temp)
             csv_writer_temp.writerow([timestamp, temp_array[0], temp_array[1], temp_array[2], temp_array[3]
                                         , temp_array[4], temp_array[5], temp_array[6], temp_array[7]
@@ -681,7 +691,7 @@ try:
                                         , temp_array[24], temp_array[25], temp_array[26], temp_array[27]
                                         , temp_array[28], temp_array[29], temp_array[30], temp_array[31]
                                         , alarm_on, check_GA(), modo_string(modo) ])
-        with open(csv_file_path_interface, mode='a', newline='') as csv_file_interface:
+        with open(csv_file_path_interface, mode='a', newline='', encoding="utf-8") as csv_file_interface:
             csv_writer_interface = csv.writer(csv_file_interface)
             csv_writer_interface.writerow([timestamp, temp_shm[0], temp_shm[1], temp_shm[2], temp_shm[3]
                                         , temp_shm[4], temp_shm[5], temp_shm[6], temp_shm[7]

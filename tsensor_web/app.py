@@ -39,11 +39,13 @@ def check_session_timeout():
             return redirect(url_for('login'))
     session['last_active'] = now
 
-
 # Routes
 @app.route('/')
 def home():
     if 'user' in session:
+        user = session.get('user')
+        tsensor_pipe["connection"] = dict(session)
+        tsensor_pipe["user"] = user
         return render_template('temperatura.html', user=session['user'])
     else:
         return render_template('login.html')
@@ -88,7 +90,7 @@ def dados_temperatura():
     enabled_sensor = tsensor_pipe["enabled_sensor"]
     pre_alarme_timeout = tsensor_pipe['pre_alarme_timeout']
     repeat_lost = tsensor_pipe['repeat_lost']
-
+    
     intermed = jsonify({'temperaturas':{'max': temperature_max,
                                         'real': temperature,
                                         'min': temperature_min},
@@ -110,11 +112,13 @@ def dados_temperatura():
 @app.route('/alterar_modo', methods=['POST'])
 def alterar_modo():
     try:
-        novo_modo = request.json.get('modo',timeout=1)
+        novo_modo = request.json.get('modo')
+        user = session.get('user')
     except:
         pass
     if novo_modo in ['ligado', 'desligado', 'auto', 'pre-alarme']:
         tsensor_pipe["modo"] = novo_modo
+        tsensor_pipe["user"] = user
         return jsonify({'message': f'Modo alterado para {novo_modo}'})
     else:
         return jsonify({'error': 'Modo inválido'}), 400
@@ -130,7 +134,9 @@ def alterar_config():
     calibracao = request.json.get('calibracao')
     pre_alarme_timeout = request.json.get('pre_alarme_timeout')
     repeat_lost = request.json.get('repeat_lost')
-    
+    user = session.get('user')
+
+
     tsensor_pipe["limite_superior"] = upper_temp
     tsensor_pipe["limite_inferior"] = lower_temp
     tsensor_pipe["limite_consecutivo"] = time_limit
@@ -139,6 +145,7 @@ def alterar_config():
     tsensor_pipe["calibracao"] = calibracao
     tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
     tsensor_pipe["repeat_lost"] = repeat_lost
+    tsensor_pipe["user"] = user
     
 
     return jsonify({'message': 'Config alterada'})
@@ -244,7 +251,6 @@ def download_file(filename):
 @app.route('/teste')
 def teste():
     return render_template('box-test.html')
-
 
 
 if __name__ == '__main__':
