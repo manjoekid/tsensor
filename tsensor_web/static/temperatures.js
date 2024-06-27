@@ -336,6 +336,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 //document.getElementById("sensorCheckbox").disabled = true;
                 document.getElementById("sensorCheckbox").style.display = 'none';
                 document.getElementById("sensorEnabledLabel").style.display = 'none';
+                document.getElementById("cal_temp_label").innerHTML = 'Temperatura média:';
+                document.getElementById("calibracao").style.display = 'none';
+                document.getElementById("cal_label").style.display = 'none';
             }else{
                 select.value = "0";
                 option.style.display = 'none';
@@ -346,6 +349,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 //document.getElementById("sensorCheckbox").disabled = false;
                 document.getElementById("sensorCheckbox").style.display = 'block';
                 document.getElementById("sensorEnabledLabel").style.display = 'block';
+                document.getElementById("calibracao").style.display = 'block';
+                document.getElementById("cal_label").style.display = 'block';
+                document.getElementById("cal_temp_label").innerHTML = 'Temperatura atual:';
+                document.getElementById("calibracao").value = configData.calibracao[0];
             }
         });
     }
@@ -367,6 +374,8 @@ document.addEventListener('DOMContentLoaded', function () {
             option.style.display = 'none';
             document.getElementById("sensor_select").disabled = false;
             document.getElementById("sensorCheckbox").disabled = false;
+            document.getElementById("sensorCheckbox").style.display = 'block';
+            document.getElementById("sensorEnabledLabel").style.display = 'block';
             document.getElementById("calibracao").style.display = 'block';
             document.getElementById("cal_label").style.display = 'block';
             document.getElementById("cal_temp_label").innerHTML = 'Temperatura atual:';
