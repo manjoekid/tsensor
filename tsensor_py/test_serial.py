@@ -169,7 +169,7 @@ def blink_led_error(led_state):
         data_received_mod = [0]
     else:
         data_received_mod = tcp_modbus.write_single_register(501, led_state)    #Liga/desliga led
-    print_msg(f"Data received from Modbus after turning LED on/off: {data_received_mod}",1)
+    print_msg(f"Data received from Modbus after turning LED on/off: {data_received_mod}",2)
 
 def turn_off_alarm():
     global alarm_on
@@ -307,7 +307,7 @@ def check_update_from_interface():
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Modo alterado para "+modo_string(modo)+" por usuário "+str(user))
+        save_change_to_log("Info","Modo alterado para "+modo_string(modo)+" por usuário " + user)
         if modo == 'ligado':
             turn_on_alarm()
         else :
@@ -315,38 +315,38 @@ def check_update_from_interface():
     if tsensor_pipe["limite_superior"] != upper_limit :
         upper_limit = tsensor_pipe["limite_superior"]
         set_key(find_dotenv(), 'upper_limit', str(upper_limit))   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Limite superior alterado para "+str(upper_limit)+" por usuário "+str(user))
+        save_change_to_log("Info","Limite superior alterado para "+str(upper_limit)+" por usuário " + user)
     if tsensor_pipe["limite_inferior"] != lower_limit :
         lower_limit = tsensor_pipe["limite_inferior"]
         set_key(find_dotenv(), 'lower_limit', str(lower_limit))   #salva estado do alarme no '.env'
-        save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit)+" por usuário "+str(user))
+        save_change_to_log("Info","Limite inferior alterado para "+str(lower_limit)+" por usuário "+ user)
     if tsensor_pipe["limite_consecutivo"] != consecutive_limit :
         consecutive_limit = tsensor_pipe["limite_consecutivo"]
         set_key(find_dotenv(), 'consecutive_limit', str(consecutive_limit))   
-        save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit)+" por usuário "+str(user))
+        save_change_to_log("Info","Quantidade de amostras antes de alarmar alterado para  "+str(consecutive_limit)+" por usuário "+ user)
     if tsensor_pipe["general_limit"] != general_limit :
         general_limit = tsensor_pipe["general_limit"]
         set_key(find_dotenv(), 'general_limit', str(general_limit))  
-        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual")+" por usuário "+str(user))
+        save_change_to_log("Info","Modo de avaliação de limites alterado para "+ ("Geral" if general_limit else "Individual")+" por usuário "+ user)
     if tsensor_pipe["enabled_sensor"] != enabled_sensor :
         enabled_sensor = tsensor_pipe["enabled_sensor"]
         set_key(find_dotenv(), 'enabled_sensor', str(enabled_sensor))  
-        save_change_to_log("Info","Lista de sensores habilitados alterada para "+str(enabled_sensor)+" por usuário "+str(user))
+        save_change_to_log("Info","Lista de sensores habilitados alterada para "+str(enabled_sensor)+" por usuário "+ user)
     if tsensor_pipe["calibracao"] != calibracao :
         calibracao = tsensor_pipe["calibracao"]
         set_key(find_dotenv(), 'calibracao', str(calibracao))  
-        save_change_to_log("Info","Calibração dos sensores alterada para "+str(calibracao)+" por usuário "+str(user))
+        save_change_to_log("Info","Calibração dos sensores alterada para "+str(calibracao)+" por usuário "+ user)
     if tsensor_pipe["pre_alarme_timeout"] != pre_alarme_timeout :
         pre_alarme_timeout = tsensor_pipe["pre_alarme_timeout"]
         set_key(find_dotenv(), 'pre_alarme_timeout', str(pre_alarme_timeout))  
-        save_change_to_log("Info","Timeout de pré-alarme alterado para "+str(pre_alarme_timeout)+" por usuário "+str(user))
+        save_change_to_log("Info","Timeout de pré-alarme alterado para "+str(pre_alarme_timeout)+" por usuário "+ user)
     if tsensor_pipe["repeat_lost"] != repeat_lost :
         repeat_lost = tsensor_pipe["repeat_lost"]
         set_key(find_dotenv(), 'repeat_lost', str(repeat_lost))  
-        save_change_to_log("Info","Filtro repete anterior alterado para "+("Ligado" if repeat_lost else "Desligado")+" por usuário "+str(user))
+        save_change_to_log("Info","Filtro repete anterior alterado para "+("Ligado" if repeat_lost else "Desligado")+" por usuário "+ user)
     if tsensor_pipe["connection"] != connection :
         connection = tsensor_pipe["connection"]
-        save_change_to_log("Info","Nova conexão na interface por usuário "+str(user)+" - connection: " + str(connection))
+        save_change_to_log("Info","Nova conexão na interface por usuário " + user + " - connection: " + str(connection))
         connection = ""
         tsensor_pipe["connection"] = connection
         print_msg(f"[{timestamp}] Nova conexão do usuário {user}",1)
@@ -772,12 +772,13 @@ try:
             if reboot_sensor_count == 5:
                 count_reboot+=1
                 if count_reboot < 3:        #verifica se já teve pelo menos 2 reinicializações com menos de 5min, se tiver, reinicia count_reboot e aguarda 
-                    reiniciar_haste(2,3)
+                    #reiniciar_haste(2,3)
+                    pass
                 else:
-                    if count_reboot > 10:
+                    if count_reboot > 100:
                         count_reboot = 0
-            if reboot_sensor_count > count_error_limit:   #se tiver por mais de 5min (count_error_limit) com sensores faltando, reinicia contagem
-                reboot_sensor_count = 0
+            if reboot_sensor_count == count_error_limit:   #se tiver por mais de 5min (count_error_limit) com sensores faltando, reinicia contagem
+                #reboot_sensor_count = 0
                 count_reboot = 0
                 if repeat_lost :
                     repeat_lost_over = True
