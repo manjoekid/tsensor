@@ -38,6 +38,29 @@ try:
     # Convert the integers to floats
     lower_limit = [float(x) for x in float_list]     # limite inferior de temperatura. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
 
+
+
+    env_line = os.getenv("upper_limit_start")
+    # Convert the string representation of list to a Python list
+    upper_limit_start = [10.0 for x in range(33)]
+    if env_line == None :
+        set_key(find_dotenv(), 'upper_limit_start', str(upper_limit_start))   #salva estado do alarme no '.env'
+    else :        
+        float_list = ast.literal_eval(env_line)
+        # Convert the integers to floats
+        upper_limit_start = [float(x) for x in float_list]     # limite superior de temperatura no modo partida. O valor deve ser superior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+
+    env_line = os.getenv("lower_limit_start")
+    # Convert the string representation of list to a Python list
+    lower_limit_start = [10.0 for x in range(33)]
+    if env_line == None :
+        set_key(find_dotenv(), 'lower_limit_start', str(lower_limit_start))   #salva estado do alarme no '.env'
+    else :        
+        float_list = ast.literal_eval(env_line)
+        # Convert the integers to floats
+        lower_limit_start = [float(x) for x in float_list]     # limite inferior de temperatura  no modo partida. O valor deve ser inferior para iniciar contagem. Por exemplo, se limite é 7.0, o alarme vai acionar quando alcançar 7º abaixo da média
+
+
     consecutive_limit = int(os.getenv('consecutive_limit',default='7'))     # limite de medidas acima da temperatura para acionar alarme. Por exemplo se limite é 5, o alarme vai acionar quando for realizada a 6 leitura consecutiva acima ou abaixo do limite
     general_limit = (os.getenv('general_limit',default='True')=='True')
 
@@ -62,14 +85,14 @@ try:
     debug_mode = (os.getenv('debug_mode',default='False')=='True')
     verbose = int(os.getenv('verbose',default='0'))
 
-    modo = os.getenv('modo',default='auto')
+    modo = os.getenv('modo',default="auto")
 
     alarm_on = (os.getenv('alarm_on',default='True')=='True')
 
     outlier_temp = float(os.getenv('outlier_temp',default='150.0'))
 
-    pre_alarme_timeout = int(os.getenv('pre_alarme_timeout',default='600')) # tempo que dura o pré-alarme
-    pre_alarme_init = int(os.getenv('pre_alarme_init',default='0')) # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
+    pre_alarme_timeout = int(os.getenv('pre_alarme_timeout',default='600')) # tempo que dura o alarme de partida
+    pre_alarme_init = (os.getenv('pre_alarme_init',default='False')=='True') # se igual a False, desabilita o alarme de partida
 
     repeat_lost = (os.getenv('repeat_lost',default='True')=='True') # tempo que dura a inicialização do pré-alarme, se igual a 0, desabilita o pré-alarme
     repeat_lost_over = False # variável que controla se filtro repete anterior já ficou ligado por mais de 5 min (count_error_limit)
@@ -83,6 +106,7 @@ current_hour = 0
 current_hour_alarm = 0
 count_reboot = 0
 connection = ""
+GA_state = True
 
 # Create a serial object
 if not debug_mode:
@@ -124,6 +148,8 @@ tsensor_pipe["estado"] = alarm_on
 tsensor_pipe["estado_ga"] = False
 tsensor_pipe["limite_superior"] = upper_limit
 tsensor_pipe["limite_inferior"] = lower_limit
+tsensor_pipe["limite_superior_partida"] = upper_limit_start
+tsensor_pipe["limite_inferior_partida"] = lower_limit_start
 tsensor_pipe["calibracao"] = calibracao
 tsensor_pipe["general_limit"] = general_limit
 tsensor_pipe["limite_consecutivo"] = consecutive_limit
@@ -200,7 +226,7 @@ def turn_on_alarm():
     if check_Alarm() :
         return
 
-    if tsensor_pipe["modo"] == 'auto' :
+    if ((tsensor_pipe["modo"] == "auto") or (tsensor_pipe["modo"] == "partida")) :
         if check_GA():
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
@@ -225,7 +251,7 @@ def turn_on_alarm():
             #alarm_on = False
             #tsensor_pipe["estado"] = False
             return
-    elif ((tsensor_pipe["modo"] == 'ligado' ) or (tsensor_pipe["modo"] == 'pre-alarme')) :
+    elif (tsensor_pipe["modo"] == 'ligado' ) :
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
 
         # Writing data to the TCP port
@@ -243,6 +269,7 @@ def turn_on_alarm():
         return
 
 def check_GA():
+    global modo, pre_alarme_init, GA_state
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S') 
     # Reading data to the TCP port
     if debug_mode:
@@ -256,11 +283,19 @@ def check_GA():
     print_msg(f"Data received from Modbus: {data_received_mod}",2)
     if data_received_mod == [1] :
         print_msg(f"[{timestamp}] GA is ON",2)
+        if not GA_state :
+            print_msg(f"[{timestamp}] GA foi ligado - Identificada partida do motor",0)
+            GA_state = True
+            if ((modo == "auto") and (pre_alarme_init)) :
+                print_msg(f"[{timestamp}] Entrando em modo partida",0)
+                modo = "partida"
+                tsensor_pipe["modo"] = "partida"
         tsensor_pipe["estado_ga"] = True
         return True
     else:
         print_msg(f"[{timestamp}] GA is OFF",2)
         tsensor_pipe["estado_ga"] = False
+        GA_state = False
         return False        
 
 def return_alarm_to_state(alarm_saved_state):
@@ -300,7 +335,7 @@ def check_Alarm():
     return alarm_state
 
 def check_update_from_interface():
-    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout, repeat_lost,connection
+    global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout, repeat_lost,connection, upper_limit_start, lower_limit_start
 
     user = tsensor_pipe["user"]
 
@@ -350,6 +385,16 @@ def check_update_from_interface():
         connection = ""
         tsensor_pipe["connection"] = connection
         print_msg(f"[{timestamp}] Nova conexão do usuário {user}",1)
+    if tsensor_pipe["limite_superior_partida"] != upper_limit_start :
+        upper_limit_start = tsensor_pipe["limite_superior_partida"]
+        set_key(find_dotenv(), 'upper_limit_start', str(upper_limit_start))   #salva estado do alarme no '.env'
+        save_change_to_log("Info","Limite superior de partida alterado para "+str(upper_limit_start)+" por usuário "+ user)         
+    if tsensor_pipe["limite_inferior_partida"] != lower_limit_start :
+        lower_limit_start = tsensor_pipe["limite_inferior_partida"]
+        set_key(find_dotenv(), 'lower_limit_start', str(lower_limit_start))   #salva estado do alarme no '.env'
+        save_change_to_log("Info","Limite inferior de partida alterado para "+str(lower_limit_start)+" por usuário "+ user) 
+    
+
 
 
 def modo_string(modo):
@@ -359,8 +404,8 @@ def modo_string(modo):
         return "Desligado Manual"
     elif modo == 'auto':
         return "Alarme Operacional"
-    elif modo == 'pre-alarme':
-        return "Pré-Alarme"
+    elif modo == 'partida':
+        return "Partida"
     else:
         return "Erro - Modo não reconhecido"
 
@@ -513,7 +558,7 @@ try:
     reboot_sensor_count = 0  # temporizador para limitar reinicialização da haste a cada 10min (600s)
 
     if alarm_on:             # verifica se o alarme está ligado ao iniciar o sistema, se estiver, desabilita o pré-alarme
-        pre_alarme_init = 0
+        pre_alarme_init = False
 
     last_temp_array = np.zeros(32, dtype='float32')
 
@@ -551,11 +596,6 @@ try:
         ### zera o array de temperaturas
         temp_array = np.zeros(32, dtype='float32')      ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA CSV
         temp_shm = np.zeros(32, dtype='float32')        ## ARRAY COM VALORES QUE SÃO ENVIADOS PARA PÁGINA DO USUÁRIO - sem valores zerados
-
-
-        
-        if pre_alarme_init > 0 :
-            pre_alarme_init -= 1
 
         alarmou = False
 
@@ -596,9 +636,12 @@ try:
                 ####################################################################
                 ### recorta os dados do primeiro sensor ############################
                 ####################################################################
-
-                upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[i*2]) )
-                lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[i*2]) )
+                if modo == "partida" :
+                    upper_limit_total = (average_temp + (upper_limit_start[32] if general_limit else upper_limit_start[i*2]) )
+                    lower_limit_total = (average_temp - (lower_limit_start[32] if general_limit else lower_limit_start[i*2]) )
+                else: 
+                    upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[i*2]) )
+                    lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[i*2]) )
 
 
                 #########  converte valor recebido da serial em temperatura
@@ -616,8 +659,13 @@ try:
                 ### recorta os dados do segundo sensor #############################
                 ####################################################################
 
-                upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[(i*2)+1]) )
-                lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[(i*2)+1]) )
+                if modo == "partida" :
+                    upper_limit_total = (average_temp + (upper_limit_start[32] if general_limit else upper_limit_start[(i*2)+1]) )
+                    lower_limit_total = (average_temp - (lower_limit_start[32] if general_limit else lower_limit_start[(i*2)+1]) )
+                else: 
+                    upper_limit_total = (average_temp + (upper_limit[32] if general_limit else upper_limit[(i*2)+1]) )
+                    lower_limit_total = (average_temp - (lower_limit[32] if general_limit else lower_limit[(i*2)+1]) )
+                
 
                 #########  converte valor recebido da serial em temperatura
                 temp_array[(i*2)+1] = int(data_received[8:12],16)/100
@@ -629,12 +677,6 @@ try:
 
                 alarmou |= analisa_alarme((i*2)+1)
 
-
-                ########  analisa lógica do pré-alarme   ###########
-                if (alarmou & (pre_alarme_init>0)):
-                    modo = 'pre-alarme'
-                    tsensor_pipe["modo"] = modo
-                    turn_on_alarm()
 
             else:
                 ################### ERRO DE LEITURA ######################
@@ -653,17 +695,12 @@ try:
                 #time.sleep(0.01)
                 
 
-        if modo == 'pre-alarme':
+        if modo == "partida":
             if pre_alarme_timeout > 0:
                 pre_alarme_timeout -= 1
                 tsensor_pipe["pre_alarme_timeout"] = pre_alarme_timeout
             else:
-                if alarmou:
-                    modo = "auto"
-                else :
-                    modo = "desligado"
-                    turn_off_alarm()
-                    modo = "auto"
+                modo = "auto"
                 tsensor_pipe["modo"] = modo
 
         check_update_from_interface()

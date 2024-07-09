@@ -21,12 +21,14 @@ var configData = {
     general_limit: true, // Geral (true) ou individual (false)
     upper : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],            //index 32 é o valor geral
     lower : [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
+    upper_start : [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10],            //index 32 é o valor geral
+    lower_start : [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10],
     calibracao : [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
                   0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
     enabled : [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
                true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
     time : 7,
-    pre_alarme_timeout : 90,
+    pre_alarme_timeout : 600,
     repeat_lost : false
 };
 
@@ -50,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 atualizarEstado(data.estado,data.estado_ga);
                 configData.upper = data.upper_limit.map(str => parseFloat(str));
                 configData.lower = data.lower_limit.map(str => parseFloat(str));
+                configData.upper_start = data.upper_limit_start.map(str => parseFloat(str));
+                configData.lower_start = data.lower_limit_start.map(str => parseFloat(str));
                 configData.time = parseInt(data.time);
                 configData.general_limit = data.general_limit;
                 configData.enabled = data.enabled_sensor;
@@ -70,6 +74,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             atualizarEstado(data.estado,data.estado_ga);
                             configData.upper = data.upper_limit.map(str => parseFloat(str));
                             configData.lower = data.lower_limit.map(str => parseFloat(str));
+                            configData.upper_start = data.upper_limit_start.map(str => parseFloat(str));
+                            configData.lower_start = data.lower_limit_start.map(str => parseFloat(str));
                             configData.time = parseInt(data.time);
                             configData.general_limit = data.general_limit;
                             configData.enabled = data.enabled_sensor;
@@ -153,8 +159,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var newFloatArray = temperaturas.real.slice().map(str => parseFloat(str));; 
         newFloatArray.push(media);
-        newFloatArray.push(media+configData.upper[32]);
-        newFloatArray.push(media-configData.lower[32]);
+        if (document.getElementById('modoSelecao').value == "partida"){
+            newFloatArray.push(media+configData.upper_start[32]);
+            newFloatArray.push(media-configData.lower_start[32]);
+        } else {
+            newFloatArray.push(media+configData.upper[32]);
+            newFloatArray.push(media-configData.lower[32]);
+        }
         circularBuffer.add(newFloatArray);
 
         var timestamp = new Date().toLocaleTimeString();
@@ -191,11 +202,21 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         tempChart.data.datasets[4].data = Array.from({length: temperaturas.real.length}, (_, i) => media)
         if (configData.general_limit){
-            tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[32])
-            tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[32])
+            if (document.getElementById('modoSelecao').value == "partida"){
+                tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper_start[32])
+                tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower_start[32])
+            }else{
+                tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[32])
+                tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[32])
+            }
         }else{
-            tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[i])
-            tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[i])
+            if (document.getElementById('modoSelecao').value == "partida"){
+                tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper_start[i])
+                tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower_start[i])
+            }else{
+                tempChart.data.datasets[3].data = Array.from({length: temperaturas.real.length}, (_, i) => media+configData.upper[i])
+                tempChart.data.datasets[5].data = Array.from({length: temperaturas.real.length}, (_, i) => media-configData.lower[i])
+            }
         }
         tempChart.update(); 
         var modal = document.getElementById('config_modal');
@@ -234,12 +255,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function atualizarModo(modo,timeout) {
-        if (modo == 'pre-alarme'){
+        if (modo == 'partida'){
             const select = document.getElementById('modoSelecao');
-            const option = select.querySelector('option[value="pre-alarme"]');
+            const option = select.querySelector('option[value="partida"]');
             option.disabled = false; // Temporarily enable the option
-            option.text = 'pre-alarme (' + timeout + ')'
-            select.value =  'pre-alarme'; 
+            option.text = 'Partida (' + timeout + ')'
+            select.value =  'partida'; 
             option.disabled = true; // Disable the option again
             // Trigger a change event to notify any event listeners
             const event = new Event('change');
@@ -602,12 +623,14 @@ document.addEventListener('DOMContentLoaded', function () {
         configData.general_limit = true; // Geral (true) ou individual (false)
         configData.upper = [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];            //index 32 é o valor geral
         configData.lower = [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];
+        configData.upper_start = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10];            //index 32 é o valor geral
+        configData.lower_start = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10];        
         configData.calibracao = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
                                  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0];
         configData.enabled = [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,
                               true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true];
         configData.time = 7;
-        configData.pre_alarme_timeout = 90;
+        configData.pre_alarme_timeout = 600;
         configData.repeat_lost = false;
 
         enviaConfig();
