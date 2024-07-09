@@ -106,13 +106,12 @@ current_hour = 0
 current_hour_alarm = 0
 count_reboot = 0
 connection = ""
-GA_state = True
+GA_state = False
 
 # Create a serial object
 if not debug_mode:
     ser_sensor = serial.Serial(port_serial, baudrate_serial, timeout=timeout_serial)
-#ser_sensor = serial.Serial(port=port1, baudrate=baudrate1, bytesize=8, parity='N', stopbits=2, timeout=timeout1, xonxoff=0, rtscts=0)
-tcp_modbus = ModbusClient(host=host_tcp, port=port_tcp, unit_id=unit_id_tcp, auto_open=auto_open_tcp)
+    tcp_modbus = ModbusClient(host=host_tcp, port=port_tcp, unit_id=unit_id_tcp, auto_open=auto_open_tcp)
 
 
 # Open a CSV file for writing temp

@@ -124,7 +124,7 @@
         </div>
         <div class="modal-body">
             <form id="config_form">
-                <label for="pre_alarme">Timeout Pré-Alarme:</label>
+                <label for="pre_alarme">Timeout Modo Partida:</label>
                 <input type="number" id="pre_alarme" name="pre_alarme" required>
                 <br><br>
                 <div class="form-check">
@@ -133,10 +133,11 @@
                         Filtro repete anterior?
                     </label>
                 </div>
-                <br><br>
+                <br>
                 <label for="time">Tempo Geral:</label>
                 <input type="number" id="time" name="time" required>
                 <br><br>
+
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1" checked>
                     <label class="form-check-label" for="inlineRadio1">Controle Geral</label>
@@ -181,6 +182,15 @@
                     <option value="31">Sensor 32</option>
                 </select>
                 <br><br>  
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="partidaRadioOptions" id="radioPartida1" value="option1" checked>
+                    <label class="form-check-label" for="inlineRadio1">Limites Operacionais</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="partidaRadioOptions" id="radioPartida2" value="option2">
+                    <label class="form-check-label" for="inlineRadio2">Limites durante Partida do Motor</label>
+                  </div>
+                  <br><br>
                 <label for="upper_temp">Temperatura Superior:</label>
                 <input type="number" id="upper_temp" name="upper_temp" required>
                 <br><br>

@@ -315,12 +315,13 @@ document.addEventListener('DOMContentLoaded', function () {
           return; // Prevent further execution
         }
     
-        // If validation passes, proceed with form submission
-        // For example, you can submit the form using AJAX or redirect to another page
-        // Here, we'll just log the values to the console
-        
-        configData.upper[sensor_selected] = parseFloat(upper);
-        configData.lower[sensor_selected] = parseFloat(lower);
+        if (document.getElementsByName("partidaRadioOptions")[0].checked){
+            configData.upper[sensor_selected] = parseFloat(upper);
+            configData.lower[sensor_selected] = parseFloat(lower); 
+        }else{
+            configData.upper_start[sensor_selected] = parseFloat(upper);
+            configData.lower_start[sensor_selected] = parseFloat(lower);           
+        }        
         configData.calibracao[sensor_selected] = parseFloat(calibra);
         configData.time = parseInt(time);
         configData.pre_alarme_timeout = parseInt(pre_alarme_timeout);
@@ -403,8 +404,13 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById("calibracao").value = configData.calibracao[0];
         }
         var sensor_selected = parseInt(select.value);
-        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
-        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+        if (document.getElementsByName("partidaRadioOptions")[0].checked){
+            document.getElementById("upper_temp").value = configData.upper[sensor_selected];
+            document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+        }else{
+            document.getElementById("upper_temp").value = configData.upper_start[sensor_selected];
+            document.getElementById("lower_temp").value = configData.lower_start[sensor_selected];            
+        }
     }
 
     document.getElementById('inlineRadio1').addEventListener('change', function () {
@@ -415,11 +421,37 @@ document.addEventListener('DOMContentLoaded', function () {
         changeSelectGeneral();
     });
 
+    function changeSelectPartida(){
+        const select = document.getElementById('sensor_select');
+        var sensor_selected = parseInt(select.value);
+        if (document.getElementsByName("partidaRadioOptions")[0].checked){
+            document.getElementById("upper_temp").value = configData.upper[sensor_selected];
+            document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+        }else{
+            document.getElementById("upper_temp").value = configData.upper_start[sensor_selected];
+            document.getElementById("lower_temp").value = configData.lower_start[sensor_selected];            
+        }
+
+    }
+
+    document.getElementById('radioPartida1').addEventListener('change', function () {
+        changeSelectPartida();
+    });
+
+    document.getElementById('radioPartida2').addEventListener('change', function () {
+        changeSelectPartida();
+    });
+
     document.getElementById('sensor_select').addEventListener('change', function () {
 
         var sensor_selected = parseInt(document.getElementById("sensor_select").value);
-        document.getElementById("upper_temp").value = configData.upper[sensor_selected];
-        document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+        if (document.getElementsByName("partidaRadioOptions")[0].checked){
+            document.getElementById("upper_temp").value = configData.upper[sensor_selected];
+            document.getElementById("lower_temp").value = configData.lower[sensor_selected];
+        }else{
+            document.getElementById("upper_temp").value = configData.upper_start[sensor_selected];
+            document.getElementById("lower_temp").value = configData.lower_start[sensor_selected];            
+        }
         document.getElementById("calibracao").value = configData.calibracao[sensor_selected];
         document.getElementById("sensorCheckbox").checked = configData.enabled[sensor_selected];
 
