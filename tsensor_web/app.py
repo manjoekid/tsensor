@@ -84,6 +84,8 @@ def dados_temperatura():
     temperature_media = str(tsensor_pipe["media"])
     upper_limit = [str(num) for num in tsensor_pipe["limite_superior"]]
     lower_limit = [str(num) for num in tsensor_pipe["limite_inferior"]]
+    upper_limit_start = [str(num) for num in tsensor_pipe["limite_superior_partida"]]
+    lower_limit_start = [str(num) for num in tsensor_pipe["limite_inferior_partida"]]    
     calibracao = [str(num) for num in tsensor_pipe["calibracao"]]
     time_limit = str(tsensor_pipe["limite_consecutivo"])
     general_limit = tsensor_pipe["general_limit"]
@@ -100,6 +102,8 @@ def dados_temperatura():
                         'media':temperature_media,
                         'upper_limit':upper_limit,
                         'lower_limit':lower_limit,
+                        'upper_limit_start':upper_limit_start,
+                        'lower_limit_start':lower_limit_start,
                         'calibracao':calibracao,
                         'time':time_limit,
                         'general_limit':general_limit,
@@ -128,6 +132,8 @@ def alterar_modo():
 def alterar_config():
     upper_temp = request.json.get('upper')
     lower_temp = request.json.get('lower')
+    upper_temp_start = request.json.get('upper_start')
+    lower_temp_start = request.json.get('lower_start')    
     time_limit = request.json.get('time')
     general_limit = request.json.get('general_limit')
     enabled_sensor = request.json.get('enabled')
@@ -139,6 +145,8 @@ def alterar_config():
 
     tsensor_pipe["limite_superior"] = upper_temp
     tsensor_pipe["limite_inferior"] = lower_temp
+    tsensor_pipe["limite_superior_partida"] = upper_temp_start
+    tsensor_pipe["limite_inferior_partida"] = lower_temp_start 
     tsensor_pipe["limite_consecutivo"] = time_limit
     tsensor_pipe["general_limit"] = general_limit
     tsensor_pipe["enabled_sensor"] = enabled_sensor
