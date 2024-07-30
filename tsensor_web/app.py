@@ -12,7 +12,7 @@ app = Flask(__name__,
             static_folder='static',
             template_folder='templates')
 app.secret_key = os.urandom(24)  # Secret key for session management
-SESSION_TIMEOUT = 60  # Session timeout in seconds 
+SESSION_TIMEOUT = 600  # Session timeout in seconds 
 
 # Mock user data (replace with a database in a real application)
 users = {
@@ -67,7 +67,7 @@ def login():
 @app.route('/logout')
 def logout():
     session.pop('user', None)
-    return redirect(url_for('home'))
+    return redirect(url_for('login'))
 
 # Rota para fornecer os dados de temperatura via AJAX
 @app.route('/dados_temperatura', methods=['GET'])
@@ -117,9 +117,13 @@ def dados_temperatura():
 def alterar_modo():
     try:
         novo_modo = request.json.get('modo')
+        if 'user' in session:
+            pass
+        else:
+            return redirect(url_for('login'))
         user = session.get('user')
     except:
-        pass
+        return jsonify({'error': 'Modo inválido'}), 400
     if novo_modo in ['ligado', 'desligado', 'auto', 'pre-alarme']:
         tsensor_pipe["modo"] = novo_modo
         tsensor_pipe["user"] = user

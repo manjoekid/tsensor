@@ -280,8 +280,14 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify({ modo: novoModo })
         })
-        .then(response => response.json())
-        .then(data => console.log('Modo alterado:', data))
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url; // Follow the redirect
+            } 
+        })
+        .then(data => {
+            console.log('Modo alterado:', data)
+        })
         .catch(error => console.error('Erro ao alterar modo:', error));
     });
 

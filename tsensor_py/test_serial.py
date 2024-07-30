@@ -337,7 +337,8 @@ def check_update_from_interface():
     global modo,upper_limit,lower_limit,consecutive_limit,general_limit,enabled_sensor,calibracao,pre_alarme_timeout, repeat_lost,connection, upper_limit_start, lower_limit_start
 
     user = tsensor_pipe["user"]
-
+    if user is None:
+        user = 'error getting user'
     if tsensor_pipe["modo"] != modo :
         modo = tsensor_pipe["modo"]
         set_key(find_dotenv(), 'modo', modo)   #salva estado do alarme no '.env'
