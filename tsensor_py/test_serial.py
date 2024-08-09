@@ -516,7 +516,10 @@ def analisa_alarme(sensor):
         else:    # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
             temp_shm[sensor] = average_temp
             if (repeat_lost and not repeat_lost_over):
-                temp_shm[sensor] = last_temp_array[sensor]
+                if (last_temp_array[sensor] == 0):
+                    temp_shm[sensor] = average_temp
+                else:                    
+                    temp_shm[sensor] = last_temp_array[sensor]
     else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
         temp_shm[sensor] = average_temp
 
