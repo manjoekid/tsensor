@@ -81,6 +81,14 @@ try:
         float_list = ast.literal_eval(env_line)
     calibracao = [float(x) for x in float_list] 
 
+    env_line = os.getenv("max_variation")
+    if env_line == None :
+        set_key(find_dotenv(), 'max_variation', '5')   #salva variação máxima da temperatura por segundo dos sensores no '.env'
+        max_variation = 5
+    else :
+        max_variation = int(env_line)
+
+
 
     debug_mode = (os.getenv('debug_mode',default='False')=='True')
     verbose = int(os.getenv('verbose',default='0'))
@@ -478,46 +486,55 @@ def inicializa_haste():
 
 
 def analisa_alarme(sensor):
-    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp, repeat_lost, repeat_lost_over
+    global enabled_sensor, temp_array, outlier_temp, upper_limit_total, alarm_up_array, consecutive_limit, timestamp, lower_limit_total, alarm_down_array, temp_shm, average_temp, repeat_lost, repeat_lost_over, max_variation
 
     acionou_alarme = False
     ### verifica se o sensor está habilitado
     if enabled_sensor[sensor] :
-        ### verifica se o sensor estivá com a temperatura acima do limite outlier
+        ### verifica se o sensor está com a temperatura acima do limite outlier
         if temp_array[sensor] < outlier_temp :
-            ### verifica se ultrapassou limite superior
-            if temp_array[sensor] > upper_limit_total :
-                alarm_up_array[sensor] += 1
-                if alarm_up_array[sensor] > consecutive_limit :
-                    turn_on_alarm()
-                    acionou_alarme = True
+            ### verifica se o sensor teve variação brusca de temperatura ou se última temperatura for zero
+            if (((temp_array[sensor] - last_temp_array[sensor]) < max_variation ) and ((last_temp_array[sensor] - temp_array[sensor]) < max_variation ) or (last_temp_array[sensor] == 0.0)):
+                ### verifica se ultrapassou limite superior
+                if temp_array[sensor] > upper_limit_total :
+                    alarm_up_array[sensor] += 1
+                    if alarm_up_array[sensor] > consecutive_limit :
+                        turn_on_alarm()
+                        acionou_alarme = True
 
-                    print_msg(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
-                    save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[sensor],"Sim",alarm_up_array[sensor])
-                else: 
-                    save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[sensor],"Não",alarm_up_array[sensor])
-                    pass
-            else :   # se temperatura não estiver maior que o limite, zera o contador
-                alarm_up_array[sensor] = 0
+                        print_msg(f"[{timestamp}] ALARME TEMPERATURA ALTA --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
+                        save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[sensor],"Sim",alarm_up_array[sensor])
+                    else: 
+                        save_alarm_to_log(i*2,upper_limit_total,"Superior",temp_array[sensor],"Não",alarm_up_array[sensor])
+                        pass
+                else :   # se temperatura não estiver maior que o limite, zera o contador
+                    alarm_up_array[sensor] = 0
 
-            ### verifica se ultrapassou limite inferior
-            if temp_array[sensor] < lower_limit_total :
-                alarm_down_array[sensor] += 1
-                if alarm_down_array[sensor] > consecutive_limit :
-                    turn_on_alarm()
-                    acionou_alarme = True
+                ### verifica se ultrapassou limite inferior
+                if temp_array[sensor] < lower_limit_total :
+                    alarm_down_array[sensor] += 1
+                    if alarm_down_array[sensor] > consecutive_limit :
+                        turn_on_alarm()
+                        acionou_alarme = True
 
-                    print_msg(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
-                    save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[sensor],"Sim",alarm_down_array[sensor])
-                else: 
-                    save_alarm_to_log(i*2,lower_limit_total,"Inferior",temp_array[sensor],"Não",alarm_down_array[sensor])
-                    pass
-            else :   # se temperatura não estiver menor que o limite, zera o contador
-                alarm_down_array[sensor] = 0
+                        print_msg(f"[{timestamp}] ALARME TEMPERATURA BAIXA --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
+                        save_alarm_to_log(sensor,lower_limit_total,"Inferior",temp_array[sensor],"Sim",alarm_down_array[sensor])
+                    else: 
+                        save_alarm_to_log(sensor,lower_limit_total,"Inferior",temp_array[sensor],"Não",alarm_down_array[sensor])
+                        pass
+                else :   # se temperatura não estiver menor que o limite, zera o contador
+                    alarm_down_array[sensor] = 0
+            else:  #se houve variação brusca de temperatura (max_variation)
+                print_msg(f"[{timestamp}] Variação brusca temperatura --- Sensor {sensor} com temperatura de %.2f" % temp_array[sensor],0)
+                temp_shm[sensor] = average_temp
+
         else:    # se o sensor estiver com a temperatura acima do limite outlier, desconsidera o valor e usa a média
             temp_shm[sensor] = average_temp
-            if (repeat_lost and not repeat_lost_over):
-                temp_shm[sensor] = last_temp_array[sensor]
+            if (repeat_lost and not repeat_lost_over):   # se filtro repete anterior estiver habilitado e dentro dos 5min
+                if (last_temp_array[sensor] == 0):       # se última temperatura for zero, usa média
+                    temp_shm[sensor] = average_temp
+                else:                    
+                    temp_shm[sensor] = last_temp_array[sensor]
     else:    # se o sensor não estiver habilitado, salva a temperatura média na lista shm
         temp_shm[sensor] = average_temp
 
