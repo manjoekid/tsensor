@@ -596,6 +596,7 @@ try:
             # Create a new CSV file
             current_datetime = time.strftime("%Y%m%d_%H%M%S")
             csv_file_path_temp = f'./output/output_temp_{current_datetime}.csv'
+            csv_file_path_interface = f'./output/output_interface_{current_datetime}.csv'
             csv_file_path_log = f'./output/output_log_{current_datetime}.csv'
             with open(csv_file_path_temp, mode='w', newline='', encoding="utf-8") as csv_file_temp:
                 csv_writer_temp = csv.writer(csv_file_temp)
